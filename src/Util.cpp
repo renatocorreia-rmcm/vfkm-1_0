@@ -68,37 +68,45 @@ void Util::loadCurves(string filename, vector<PolygonalPath>& curves,
 
         vector<pair<Vector2D,float> > curveContents;
 
-        while (file.good()  && !file.eof())
+        while (file.good()  && !file.eof())  // pick lines (coordinates {space, time}) until end of file
         {
             float x,y,t;
             file >> x >> y >> t;
             //file >> y >> x >> t;
 
-            if(x == 0 && y == 0 && t == 0) {
-                if(curveContents.size() >=2){
+            if(x == 0 && y == 0 && t == 0)  // finished curve
+            {  
+                if(curveContents.size() >=2)  // if curve has minimum size
+                {  
                     real_indices << real_index << endl;
-                    curves.push_back(PolygonalPath(curveContents));
+                    curves.push_back(PolygonalPath(curveContents));  // append new polygonal path to curves array
                 }
                 real_index++;
-                curveContents.clear();
-            } else if (x < xmin || x > xmax ||
-                  y < ymin || y > ymax ||
-                  t < tmin || t > tmax) {//end of a curve
+                curveContents.clear();  // clear curve container to store the next one
+            } 
+            else if (  // out of Bounding Box - end of curve
+                x < xmin || x > xmax ||
+                y < ymin || y > ymax ||
+                t < tmin || t > tmax
+            ) 
+            {  
                 if(curveContents.size() >=2){
                     real_indices << real_index << endl;
                     curves.push_back(PolygonalPath(curveContents));
                 }
+                // WHY NOT real_index++ IN THIS CASE ??
                 curveContents.clear();
-            } else {
+            } 
+            else  // append new point {space, time} to curve
+            {
                 pair<Vector2D, float> newPoint = make_pair(Vector2D(x,y), t);
-                if (curveContents.size() == 0)
+                if (curveContents.size() == 0)  // is the first point
                     curveContents.push_back(newPoint);
-                else if (t == curveContents.back().second)
+                else if (t == curveContents.back().second)  // repeated last timestamp - ignore this point
                     continue;
-                else if (x == curveContents.back().first.X() &&
-                    y == curveContents.back().first.Y())
+                else if (x == curveContents.back().first.X() && y == curveContents.back().first.Y())  // repeated last position - ignore this point
                     continue;
-                else
+                else  // regular point in trajectory
                     curveContents.push_back(newPoint);
             }
         }
