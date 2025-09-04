@@ -46,9 +46,7 @@ Util::Util()
 {
 }
 
-void Util::loadCurves(string filename, vector<PolygonalPath>& curves,
-                      float &xmin, float &xmax, float &ymin, float &ymax,
-                      float &tmin, float &tmax){
+void Util::loadCurves(string filename, vector<PolygonalPath>& curves, float &xmin, float &xmax, float &ymin, float &ymax, float &tmin, float &tmax){
     cout << "CALLING THIS" << endl;
     xmin = FLT_MAX;
     ymin = FLT_MAX;

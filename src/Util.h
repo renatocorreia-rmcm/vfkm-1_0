@@ -6,11 +6,11 @@
 #include "Vector.h"
 
 typedef struct Cluster{
-    std::string name;
+    std::string name;  // amount of curves
     std::vector<Cluster*> children;
     std::vector<int> indices;
     std::vector<float> curveErrors;
-    std::pair<Vector*,Vector*> vectorField;
+    std::pair<Vector*,Vector*> vectorField;  // { [x1, x2, ...], [y1, y2, ...] }  // each vector is linear, but contains R^2 elements to represent the whole grid
     Cluster* parent;
     float error;
     float maxError;

@@ -12,26 +12,32 @@
 
 using namespace std;
 
-void initExperiment(string filename, Cluster*& rootCluster, Grid*& g, 
-		    vector<PolygonalPath>& curves, int gridResolution){
-    //load curves
+void initExperiment(string filename, Cluster*& rootCluster, Grid*& g, vector<PolygonalPath>& curves, int gridResolution){
+    /*
+    initialize root cluster, grid(using gridResolution), curves(using filename)
+    */
+
+
+    //initialize curves
     float xmin, xmax, ymin, ymax, tmin, tmax;
-    Util::loadCurves(filename, curves, xmin, xmax, ymin, ymax, tmin, tmax);
+    Util::loadCurves(filename, curves, xmin, xmax, ymin, ymax, tmin, tmax);  // fill `curves` array with each curveContent: vector<pair<2-uple,float>>
 
-    //create grid
-    g = new Grid(xmin,ymin,xmax-xmin,ymax-ymin,gridResolution, gridResolution);
+    //initialize grid
+    g = new Grid(xmin,ymin,xmax-xmin,ymax-ymin,gridResolution, gridResolution);  // always square grids
 
-    //create root cluster
-    rootCluster = new Cluster;
+    //initialize root cluster
+    rootCluster = new Cluster;  // initial, top-level cluster that contains all of the curves (trajectories) before the clustering algorithm begins to partition them
+    // WHY THIS STRING STREAM IS USED?
     stringstream ss;
     ss << curves.size();
     rootCluster->name = ss.str();
     rootCluster->parent = NULL;
+    // each vector is linear, but contains R^2 elements to represent the whole grid
     Vector* rootVFX = new Vector(gridResolution * gridResolution);
     rootVFX->setValues(0.0);
     Vector* rootVFY = new Vector(gridResolution * gridResolution);
     rootVFY->setValues(0.0);
-
+    // vector field is represent by 2 arrays, 1 for each component (X and Y)
     rootCluster->vectorField = make_pair(rootVFX, rootVFY);
 
     for(size_t i = 0 ; i < curves.size() ; ++i){
@@ -112,10 +118,14 @@ void saveExperiment(string directory, string currentFileLoaded, Cluster* root){
 }
 
 int main(int argc, char *argv[]){
-    int rightNumberOfParameters = 6;
+    /*
+    arguments count
+    arguments values
+    */
 
+    int rightNumberOfParameters = 6;
     if(argc != rightNumberOfParameters){
-        //print usage
+        //print correct usage
         cout << "./vfkm trajectoryFile gridResolution numberOfVectorFields smoothnessWeight outputDirectory" << endl;
         return 0;
     }
@@ -127,14 +137,13 @@ int main(int argc, char *argv[]){
     float  smoothnessWeight = atof(argv[4]);
     string outputDirectory(argv[5]);
 
-    //load files
-    cout << "Loading Files..." << endl;
+    cout << "Declaring parameters..." << endl;
     vector<PolygonalPath> curves;
     Cluster* rootCluster = NULL;
     Grid* g = NULL;
-
-    //
-    cout << "Loading data" << endl;
+    
+    //load files + initialize parameters
+    cout << "Loading Files into parameters..." << endl;
     initExperiment(filename, rootCluster, g, curves, gridResolution);
 
     //optimize

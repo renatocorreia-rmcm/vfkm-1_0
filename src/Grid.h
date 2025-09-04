@@ -121,7 +121,7 @@ public:
 
     inline int getResolutionX() const { return m_resolutionX; }
     inline int getResolutionY() const { return m_resolutionY; }
-    inline int getNumberOfFaces() const { return 2 * (m_resolutionX - 1) * (m_resolutionY - 1); }
+    inline int getNumberOfFaces() const { return 2 * ((m_resolutionX - 1) * (m_resolutionY - 1)); }  // 2 * number_of_squares
     inline int getNumberOfFaces(int resolutionX, int resolutionY) const { return 2 * (resolutionX - 1) * (resolutionY - 1); }
     inline void getDomain(float &xD, float& yD,float &wD, float& hD) {
       xD = m_x; yD = m_y; wD = m_w; hD = m_h; }
