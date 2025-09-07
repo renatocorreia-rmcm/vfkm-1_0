@@ -12,7 +12,10 @@
 
 using namespace std;
 
-void initExperiment(string filename, Cluster*& rootCluster, Grid*& g, vector<PolygonalPath>& curves, int gridResolution){
+void initExperiment(
+    string filename, Cluster*& rootCluster, Grid*& g, vector<PolygonalPath>& curves, int gridResolution
+)
+{
     /*
     initialize root cluster, grid(using gridResolution), curves(using filename)
     */
@@ -130,19 +133,18 @@ int main(int argc, char *argv[]){
         return 0;
     }
 
-    //set parameters
+    // load arguments
     string filename(argv[1]);
     int    gridResolution = atoi(argv[2]);
     int    numberOfVectorFields = atoi(argv[3]);
     float  smoothnessWeight = atof(argv[4]);
     string outputDirectory(argv[5]);
 
-    cout << "Declaring parameters..." << endl;
     vector<PolygonalPath> curves;
     Cluster* rootCluster = NULL;
     Grid* g = NULL;
     
-    //load files + initialize parameters
+    // load files + initialize parameters
     cout << "Loading Files into parameters..." << endl;
     initExperiment(filename, rootCluster, g, curves, gridResolution);
 
@@ -150,8 +152,7 @@ int main(int argc, char *argv[]){
     cout << "Optimizing..." << endl;
     Cluster* currentCluster = rootCluster;
 
-    //Optimize
-    Optimizer op(g->getResolutionX() * g->getResolutionY());
+    Optimizer op(g->getResolutionX() * g->getResolutionY());  // 
     int numberOfCurves = currentCluster->indices.size();
 
     unsigned short mapCurveToVF[numberOfCurves];
@@ -160,7 +161,7 @@ int main(int argc, char *argv[]){
     vector<float> mapVectorFieldToError;
     vector<PolygonalPath> curvesInCurrentCluster;
 
-    for(int i = 0 ; i <numberOfCurves ; ++i){
+    for(int i = 0 ; i < numberOfCurves ; ++i){
         mapCurveToError[i] = 0;
         mapCurveToVF[i] = -1;
 
@@ -168,16 +169,20 @@ int main(int argc, char *argv[]){
         mapCurveToIndexInCurveVector[i] = currentCluster->indices.at(i);
     }
 
+    // initialize empty vector fields
     vector<pair<Vector*,Vector*> > vectorFields;
     int gridDimension  = g->getResolutionX() * g->getResolutionY();
-    for(int i = 0 ; i < numberOfVectorFields ; ++i){
+    for(int i = 0 ; i < numberOfVectorFields ; ++i)
+    {
         Vector* xComponent = new Vector(gridDimension);
         Vector* yComponent = new Vector(gridDimension);
         vectorFields.push_back(make_pair(xComponent, yComponent));
     }
 
-    op.optimizeImplicitFastWithWeights(*g,numberOfVectorFields, curvesInCurrentCluster,
-                                       vectorFields, &(mapCurveToVF[0]), mapCurveToError,smoothnessWeight);
+    // optimize
+    op.optimizeImplicitFastWithWeights(
+        *g, numberOfVectorFields, curvesInCurrentCluster, vectorFields, &(mapCurveToVF[0]), mapCurveToError,smoothnessWeight
+    );
 
     //count number of curves for each vf
     mapVectorFieldToError = vector<float>(vectorFields.size(),0);

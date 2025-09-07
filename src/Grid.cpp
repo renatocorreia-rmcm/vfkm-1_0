@@ -26,8 +26,11 @@ Grid::Grid(float x, float y, float w, float h, int resolutionX, int resolutionY)
 // REQUIRES POINT IN GRID COORDINATE SYSTEM
 TriangularFace Grid::getFaceWherePointLies(const Vector2D &v) const
 {
-    if (v.x < 0 || v.x > (m_resolutionX - 1.0) ||
-        v.y < 0 || v.y > (m_resolutionY - 1.0)) {
+    if (  // coordinates out of range
+        v.x < 0 || v.x > (m_resolutionX - 1.0) ||
+        v.y < 0 || v.y > (m_resolutionY - 1.0)
+    )
+    {
         cerr << "BAD POINT!" << endl;
         exit(1);
     }
@@ -639,20 +642,36 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent, Vector &rowLength2) {
 
 //#define DEBUG
 
-vector<Grid::Inter> Grid::clipAgainstHorizontalLines
-    (const Grid::Inter &g1, const Grid::Inter &g2) const
+vector<Grid::Inter> Grid::clipAgainstHorizontalLines(
+    const Grid::Inter &g1, const Grid::Inter &g2
+) const
 {
-    vector<Grid::Inter> result;
-    if (g1.grid_point.Y() == g2.grid_point.Y()) {
-        return result;
-    }
-    float inv_slope = (g2.grid_point.X() - g1.grid_point.X()) / 
-        (g2.grid_point.Y() - g1.grid_point.Y());
+    /*
+        take endpoints of segment,
+        return vector of its intersections with horizontal lines
+        (for each horizontal lines between the endpoints,
+        calculate intersection using linear interpolation)
+    */
 
-    if (inv_slope >= 0) {
+    vector<Grid::Inter> result;  // result is a vector of intersections
+
+    if (g1.grid_point.Y() == g2.grid_point.Y()) {  // segment is perfectly horizontal
+        return result;  // return empty list  // parallel lines do not cross
+    }
+
+    float inv_slope =  // inverse of slope = run/rise  // so never is dividing by 0
+        (g2.grid_point.X() - g1.grid_point.X()) / (g2.grid_point.Y() - g1.grid_point.Y());
+
+        
+    // now that has the slope, can calculate the intersection with each horizontal line using linear interpolation
+
+    if (inv_slope >= 0) 
+    {
         float y1 = g1.grid_point.Y(), y2 = g2.grid_point.Y();
+
         float this_y = y1;
         float next_y = floor(this_y) + 1;
+
         while (next_y < y2) {
             float u = (next_y - y1) / (y2 - y1);
             Grid::Inter p;
@@ -666,21 +685,30 @@ vector<Grid::Inter> Grid::clipAgainstHorizontalLines
             next_y = this_y + 1;
         }
         return result;
-    } else {
-        // If inv_slope is negative, we transform the problem
-        // by flipping the grid upside down. Now inv_slope will be positive.
-        // Then transform back.
+    } 
+
+    else  // inv_slope < 0
+    {
+        /*
+        If inv_slope is negative, we transform the problem by flipping the grid upside down.
+        Now inv_slope will be positive. 
+        Then transform back.
+        */
+
+        // flip the grid
         Grid::Inter reverse_g1, reverse_g2;
         float t = (m_resolutionY - 1);
         reverse_g1.grid_point = Vector2D(g1.grid_point.x, t - g1.grid_point.y);
         reverse_g2.grid_point = Vector2D(g2.grid_point.x, t - g2.grid_point.y);
         reverse_g1.u = g1.u;
         reverse_g2.u = g2.u;
-        vector<Grid::Inter> reverse_result =
-            clipAgainstHorizontalLines(reverse_g1, reverse_g2);
+        // compute flipped result
+        vector<Grid::Inter> reverse_result = clipAgainstHorizontalLines(reverse_g1, reverse_g2);  // call method again with reversed input
+        // unflip
         for (size_t i=0; i<reverse_result.size(); ++i) {
             reverse_result[i].grid_point.y = t - reverse_result[i].grid_point.y;
         }
+        
         return reverse_result;
     }
 }
@@ -722,33 +750,42 @@ static int sgn(T val)
     return (val > T(0)) - (val < T(0));
 }
 
-void Grid::clipLine(PolygonalPath &path1) const
+void Grid::clipLine(PolygonalPath &path1) const  // tesselation - find all points where path intersects 
 {
+    /*
+        insert new vertices wherever the path intersects with a grid line
+
+        divide path1 into his segments
+        then clipAgainstHorizontalLines and clipAgainstVerticalLines do the actual tesselation
+    */
+   
+    // get segments
     size_t currentVertexIndex = 0;
-
-    while(currentVertexIndex < path1.numberOfPoints() - 1){
-        Vector2D from = path1.getPoint(currentVertexIndex).first,
+    while(currentVertexIndex < path1.numberOfPoints() - 1){  // for each segment:
+        // position of start and end
+        Vector2D from = path1.getPoint(currentVertexIndex).first,  
                    to = path1.getPoint(currentVertexIndex+1).first;
-        float   tfrom = path1.getPoint(currentVertexIndex).second,
+        // time of start and end
+        float   tfrom = path1.getPoint(currentVertexIndex).second, 
                   tto = path1.getPoint(currentVertexIndex+1).second;
-
+        // direction
         Vector2D tangent = path1.getTangent(currentVertexIndex);
 
+        // convert cordinates World->Grid
         vector<Grid::Inter> inters;
         Grid::Inter e1, e2;
         e1.grid_point = toGrid(from);
         e2.grid_point = toGrid(to);
-        e1.u = 0;
-        e2.u = 1;
+        e1.u = 0;  // 0 = start 
+        e2.u = 1;  // 1 = end
         e1.kind = e2.kind = Grid::Inter::EndPoint;
 
         inters.push_back(e1);
 
         vector<Grid::Inter> horiz = clipAgainstHorizontalLines(e1, e2);
-        horiz.push_back(e2);
-        for (size_t i=0; i<horiz.size(); ++i) {
-            vector<Grid::Inter> vert = 
-                clipAgainstVerticalLines(inters.back(), horiz[i]);
+        horiz.push_back(e2);  
+        for (size_t i=0; i<horiz.size(); ++i) {  // for each horizontal intersection
+            vector<Grid::Inter> vert = clipAgainstVerticalLines(inters.back(), horiz[i]);
             // reported barycentric coords are with respect to clipped lines;
             // make a good u here.
             for (size_t j=0; j<vert.size(); ++j) {

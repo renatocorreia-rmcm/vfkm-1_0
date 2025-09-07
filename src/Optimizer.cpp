@@ -64,22 +64,20 @@ double computeErrorImplicit
     return error * (1.0 - smoothnessWeight) / (totalCurveLength);
 }
 
-//void computeErrorImplicitConstraints(Grid &g, const Vector &vfXComponent, const Vector& vfYComponent,
-//                                     int curveIndex, vector<vector<Intersection> >& mapCurveToConstraints){
-
-//    vector<Intersection> &constraints = mapCurveToConstraints[curveIndex];
-//    int numberOfConstraints = constraints.size();
-
-//    Vector cx(3 * (numberOfConstraints / 2));
-//    cx.setValues(0.0f);
-
-//    for(int i = 0 ; i < numberOfConstraints ; i += 2){
-//       Intersection currentIntersection = constraints.at(i);
-//       Intersection nextIntersection = constraints.at(i+1);
-
-//       //cx[vfXComponent[currentIntersection.indexV1];
-//    }
-//}
+/*
+void computeErrorImplicitConstraints(Grid &g, const Vector &vfXComponent, const Vector& vfYComponent,
+                                     int curveIndex, vector<vector<Intersection> >& mapCurveToConstraints){
+    vector<Intersection> &constraints = mapCurveToConstraints[curveIndex];
+    int numberOfConstraints = constraints.size();
+    Vector cx(3 * (numberOfConstraints / 2));
+    cx.setValues(0.0f);
+    for(int i = 0 ; i < numberOfConstraints ; i += 2){
+       Intersection currentIntersection = constraints.at(i);
+       Intersection nextIntersection = constraints.at(i+1);
+       //cx[vfXComponent[currentIntersection.indexV1];
+    }
+}
+*/
 
 //////// With Weights
 #define xDEBUG
@@ -128,7 +126,7 @@ void Optimizer::multiplyByA(const Vector& x, Vector &resultX, Vector &diagATA, P
 
 /******************************************************************************/
 
-void cg_solve(ProblemSettings &prob, const Vector &b, Vector &x)
+void cg_solve(ProblemSettings &prob, const Vector &b, Vector &x)  // conjugate gradient method (for solving linear systems)
 {
     // mat m(prob);
     // DiagonalPrec prec(m);
@@ -206,38 +204,40 @@ void print_problem(ProblemSettings &prob, const Vector &bx, const Vector &by)
     cout << by.toString() << endl;
 }
 
-void optimizeVectorFieldWithWeights(Grid &grid, Vector &initialGuessX, Vector &initialGuessY,
-                                    const vector<int> &curveIndices,
-                                    const vector<CurveDescription> &curve_descriptions,
-                                    float totalCurveLength,
-                                    float smoothnessWeight)
+void optimizeVectorFieldWithWeights(  // optimize a single vector field (using smoothness)
+    Grid &grid, Vector &initialGuessX, Vector &initialGuessY,
+    const vector<int> &curveIndices,
+    const vector<CurveDescription> &curve_descriptions,
+    float totalCurveLength,
+    float smoothnessWeight
+)
 {
-    // cout << "Fitting Vector Field" << endl;
+
     ///compute independent terms
     int numberOfVertices = grid.getResolutionX() * grid.getResolutionY();
 
-    Vector 
-        indepx(numberOfVertices), 
-        indepy(numberOfVertices);
+    Vector indepx(numberOfVertices), indepy(numberOfVertices);
     indepx.setValues(0.0f);
     indepy.setValues(0.0f);
 
-    for(size_t k = 0; k < curveIndices.size() ; ++k) {
+    for(size_t k = 0; k < curveIndices.size() ; ++k) {  // for each curve
         int i = curveIndices[k];
         const CurveDescription &curve = curve_descriptions[i];
 
-        for (size_t j=0; j<curve.segments.size(); ++j) {
-            float k = (1.0 - smoothnessWeight) * (curve.segments[j].time[1] - curve.segments[j].time[0])/totalCurveLength;
+        for (size_t j=0; j<curve.segments.size(); ++j) {  // for each segment in curve
+            float k = (1.0 - smoothnessWeight) * (curve.segments[j].time[1] - curve.segments[j].time[0])/totalCurveLength;  // weighting factor  // how much influence a single segment has in the optimization 
             curve.segments[j].add_cTx(indepx, curve.rhsx, k);
             curve.segments[j].add_cTx(indepy, curve.rhsy, k);
         }
     }
 
-    ProblemSettings prob(grid, curveIndices, curve_descriptions,
-                         totalCurveLength, smoothnessWeight);
+    ProblemSettings prob(
+        grid, curveIndices, curve_descriptions, totalCurveLength, smoothnessWeight
+    );
 
     Vector x(initialGuessX), y(initialGuessY);
 
+    // solve linear system
     cg_solve(prob, indepx, x);
     cg_solve(prob, indepy, y);
     initialGuessX.setValues(x);
@@ -296,29 +296,32 @@ pair< vector<int>, vector< vector<int> > > compute_first_assignment
     return make_pair(result, result_indices);
 }
 
-void set_constraints(vector<CurveDescription> &curve_descriptions,
-                     float &totalCurveLength,
-                     vector<PolygonalPath> &curves,                     
-                     const Grid &grid)
+void set_constraints(
+    vector<CurveDescription> &curve_descriptions,  // store local of validatade and tesselated paths (processed curves)
+    float &totalCurveLength,
+    vector<PolygonalPath> &curves,  // raw curves
+    const Grid &grid
+)
 {
     totalCurveLength = 0.0f;
     int numberOfCurves = curves.size();
 
-
     for(int i = 0 ; i < numberOfCurves ; ++i) {
 
-        bool bad_break = false;        
-
         PolygonalPath &p = curves.at(i);
-
+        
+        // check if points are in non decreasing time order
         for (size_t j=0; j<p.numberOfPoints()-1; ++j) {
             if (p.getPoint(j+1).second < p.getPoint(j).second) {
                 cerr << "Line is broken, has backward time." << endl;
-//                exit(1);
             }
         }
+        
+        bool bad_break = false;        
 
-        grid.clipLine(p);
+        grid.clipLine(p);  // tesselate path
+
+        // check increasing time order in tesselated path
         for (size_t j=0; j<p.numberOfPoints()-1; ++j) {
             if (p.getPoint(j+1).second < p.getPoint(j).second) {
                 cerr << i << " - Line clipper is broken, introduced backward time: ";
@@ -333,7 +336,7 @@ void set_constraints(vector<CurveDescription> &curve_descriptions,
         curve.index = i;
         curve.length = 0;
         if (!bad_break) {
-            curve = grid.curve_description(p);
+            curve = grid.curve_description(p);  // create curve object of this valid and tesselated path
             totalCurveLength += curve.length;
         }
         curve_descriptions.push_back(curve);
@@ -343,28 +346,25 @@ void set_constraints(vector<CurveDescription> &curve_descriptions,
 typedef vector< pair<Vector, Vector> > AllVectorFields;
 typedef vector< CurveDescription > AllConstraints;
 
-void optimize_all_vector_fields(
-        AllVectorFields &vectorFields,
-        Grid &grid,
-        const vector<vector<int> > &mapVectorFieldCurves,
-        const AllConstraints &curves,
-        float totalCurveLength,
-        float smoothnessWeight)
+void optimize_all_vector_fields(  // OPTMIZE STEP
+    AllVectorFields &vectorFields,
+    Grid &grid,
+    const vector<vector<int> > &mapVectorFieldCurves,
+    const AllConstraints &curves,
+    float totalCurveLength,
+    float smoothnessWeight
+)
 {
-    size_t numberOfVectorFields = vectorFields.size();
-    //optimize each vector field
-    for(size_t j = 0 ; j < numberOfVectorFields ; ++j) {
+    for(size_t j = 0 ; j < vectorFields.size() ; ++j) {  // for each vector field
+        // load vector field data
         pair<Vector, Vector> &currentVectorField = vectorFields.at(j);
         const vector<int>& curveIndices = mapVectorFieldCurves.at(j);
-
-        //optimize
         Vector &xComponent = currentVectorField.first;
         Vector &yComponent = currentVectorField.second;
-
-        optimizeVectorFieldWithWeights
-            (grid, xComponent, yComponent,
-             curveIndices, curves,
-             totalCurveLength, smoothnessWeight);
+        // optimize the vector field
+        optimizeVectorFieldWithWeights(
+            grid, xComponent, yComponent, curveIndices, curves, totalCurveLength, smoothnessWeight
+        );
     }
 }
 
@@ -399,16 +399,19 @@ double get_total_error(const vector<CurveDescription> &curves,
     return totalError;
 }
 
-void optimize_assignments(int &total_change,
-                          double &totalError,
-                          unsigned short *mapCurveToVectorField,
-                          vector<vector<int> > &mapVectorFieldCurves,
-                          float *mapCurveToError,
-                          const AllVectorFields &vectorFields,
-                          const vector<CurveDescription> &curves,
-                          float totalCurveLength,
-                          float smoothnessWeight,
-                          Grid &grid)
+
+void optimize_assignments(  /* ASSIGN STEP */
+    int &total_change,
+    double &totalError,
+    unsigned short *mapCurveToVectorField,
+    vector<vector<int> > &mapVectorFieldCurves,
+    float *mapCurveToError,
+    const AllVectorFields &vectorFields,
+    const vector<CurveDescription> &curves,
+    float totalCurveLength,
+    float smoothnessWeight,
+    Grid &grid
+)
 {
     //updating mapVectorFieldCurves
     totalError = 0.0;
@@ -495,16 +498,17 @@ void repopulate_empty_cluster(vector<vector<int> > &mapVectorFieldCurves,
     }
 }
 
-void Optimizer::optimizeImplicitFastWithWeights
-    (Grid &grid, int numberOfVectorFields,
-     vector<PolygonalPath> curves,
-     std::vector< pair<Vector*, Vector*> >& finalVectorFields,
-     unsigned short *mapCurveToVectorField,
-     float *mapCurveToError,
-     float smoothnessWeight)
+void Optimizer::optimizeImplicitFastWithWeights(
+    Grid &grid, int numberOfVectorFields,
+    vector<PolygonalPath> curves,
+    std::vector< pair<Vector*, Vector*> >& finalVectorFields,
+    unsigned short *mapCurveToVectorField,
+    float *mapCurveToError,
+    float smoothnessWeight
+)
 {
     float totalCurveLength;
-    vector<CurveDescription> curve_descriptions;
+    vector<CurveDescription> curve_descriptions;  // vector of (vectors of segments)
 
     // create vector fields
     int sz = grid.getResolutionX() * grid.getResolutionY();

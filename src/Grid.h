@@ -20,7 +20,7 @@ struct PointLocation {
 
 struct Segment {
     PointLocation endpoint[2];
-    float time[2];
+    float time[2];  // start and end timestamps of single linear segment of polygonal path
     int index;
 
     // remember that c . x actually returns Lambda . (v1, v2).
@@ -74,7 +74,7 @@ struct Segment {
 
 };
 
-struct CurveDescription
+struct CurveDescription  // vector of segments
 {
     std::vector<Segment> segments;
     int index;
@@ -103,17 +103,13 @@ typedef struct Intersection {
 
 class Grid {
 private:
-    int m_resolutionX; // number of points on the sides of the grid
-    int m_resolutionY; // number of points on the sides of the grid
+    int m_resolutionX, m_resolutionY; // number of vertices along the axis
 
-    //domain
-    float m_x;
-    float m_y;
-    float m_w;
-    float m_h;
+    //domain // m_* is used to distinct member variables from local ones
+    float m_x, m_y;  // bootom left of grid
+    float m_w, m_h;  // widht and height of grid
 
-    float m_delta_x;
-    float m_delta_y;
+    float m_delta_x, m_delta_y;  // distance between adjacent grid vertices
 
 public:
     Grid(float x, float y, float w, float h, int resolutionX, int resolutionY);
@@ -129,7 +125,7 @@ public:
     TriangularFace getFace(int index);
     TriangularFace getFace(int index, int resolutionX, int resolutionY);
 
-    Vector2D toGrid(const Vector2D &world_point) const {
+    Vector2D toGrid(const Vector2D &world_point) const {  // convert geographic ("world") coordinates into grid coordinates
         return Vector2D((world_point.X() - m_x) / m_w * (m_resolutionX - 1.0),
                         (world_point.Y() - m_y) / m_h * (m_resolutionY - 1.0));                        
     }
@@ -180,11 +176,12 @@ public:
     //assumes that every segment of the line
     //lies in a face
     
-    struct Inter {
-        Vector2D grid_point;
+    struct Inter {  // intersection point
+        Vector2D grid_point;  // grid cordinate (world cordinate normalized to grid)
         float u; // barycentric coordinate along the segment
         enum { Vertical, Horizontal, Diagonal, EndPoint } kind;
     };
+    
     std::vector<Inter> clipAgainstVerticalLines  (const Inter &g1, const Inter &g2) const;
     std::vector<Inter> clipAgainstHorizontalLines(const Inter &g1, const Inter &g2) const;
 
