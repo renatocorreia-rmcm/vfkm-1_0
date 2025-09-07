@@ -242,17 +242,16 @@ int main(int argc, char *argv[]){
     //clean memory
     cout << "Cleaning Memory" << endl;
     for(int i = 0 ; i < numberOfVectorFields ; ++i){
-	std::pair<Vector*, Vector*> &vfs = vectorFields.at(i);
-	Vector* componentX  = vfs.first;
-	if(componentX != NULL){
-	    delete componentX;
-	}
-	    
-	Vector* componentY  = vfs.second;
-	if(componentY != NULL){
-	    delete componentY;
-	}
-
+        std::pair<Vector*, Vector*> &vfs = vectorFields.at(i);
+        Vector* componentX  = vfs.first;
+        if(componentX != NULL){
+            delete componentX;
+        }
+            
+        Vector* componentY  = vfs.second;
+        if(componentY != NULL){
+            delete componentY;
+        }
     }
 
 }

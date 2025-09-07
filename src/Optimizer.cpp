@@ -514,17 +514,19 @@ void Optimizer::optimizeImplicitFastWithWeights(
     int sz = grid.getResolutionX() * grid.getResolutionY();
     vector< pair<Vector, Vector> > vectorFields(numberOfVectorFields, make_pair(Vector(sz), Vector(sz)));
 
-    // determine constraints
+    // load curve_descriptions whith clipped curves
     set_constraints(curve_descriptions, totalCurveLength, curves, grid);
     // first assignment
     pair<vector<int>, vector<vector<int> > > f = compute_first_assignment(
-        grid, numberOfVectorFields, curve_descriptions, totalCurveLength, smoothnessWeight);
+        grid, numberOfVectorFields, curve_descriptions, totalCurveLength, smoothnessWeight
+    );
+    //
     vector<vector<int> > mapVectorFieldCurves = f.second;
     copy(f.first.begin(), f.first.end(), mapCurveToVectorField);
 
     //optimize
     int numberOfIterations = 0;
-    double totalError = 1e20;
+    double totalError = 1e20;  // infinity
 
     while(numberOfIterations < 100){
         int total_change = 0;
@@ -543,7 +545,7 @@ void Optimizer::optimizeImplicitFastWithWeights(
         repopulate_empty_cluster(mapVectorFieldCurves, mapCurveToVectorField, vectorFields);
 
         ++numberOfIterations;
-        if(total_change == 0)
+        if(total_change == 0)  // saturation
             break;
     }
 
