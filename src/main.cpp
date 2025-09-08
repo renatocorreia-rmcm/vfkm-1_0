@@ -22,27 +22,29 @@ void initExperiment(
 
 
     //initialize curves
-    float xmin, xmax, ymin, ymax, tmin, tmax;
-    Util::loadCurves(filename, curves, xmin, xmax, ymin, ymax, tmin, tmax);  // fill `curves` array with each curveContent: vector<pair<2-uple,float>>
+    float xmin, xmax, ymin, ymax, tmin, tmax;  // bounding box of dataset
+    Util::loadCurves(filename, curves, xmin, xmax, ymin, ymax, tmin, tmax);  // load `curves` array with each curveContent: vector<pair<2-uple,float>>  // load bounding box
 
     //initialize grid
     g = new Grid(xmin,ymin,xmax-xmin,ymax-ymin,gridResolution, gridResolution);  // always square grids
 
-    //initialize root cluster
+    // assign root cluster
     rootCluster = new Cluster;  // initial, top-level cluster that contains all of the curves (trajectories) before the clustering algorithm begins to partition them
-    // WHY THIS STRING STREAM IS USED?
     stringstream ss;
     ss << curves.size();
     rootCluster->name = ss.str();
     rootCluster->parent = NULL;
-    // each axis array is linear, but contains R^2 elements to represent the whole grid
+
+    // initialize rootcluster VF axis
     Vector* rootVFX = new Vector(gridResolution * gridResolution);
     rootVFX->setValues(0.0);
     Vector* rootVFY = new Vector(gridResolution * gridResolution);
     rootVFY->setValues(0.0);
-    // vector field is represent by 2 arrays, 1 for each component (X and Y)
-    rootCluster->vectorField = make_pair(rootVFX, rootVFY);
 
+    // vector field is represent by one array for each axis (an array of axis)
+    rootCluster->vectorField = {rootVFX, rootVFY};
+
+    // initialize indices and curveErrors
     for(size_t i = 0 ; i < curves.size() ; ++i){
         rootCluster->indices.push_back(i);
         rootCluster->curveErrors.push_back(0.0f);
@@ -141,11 +143,12 @@ int main(int argc, char *argv[]){
     float  smoothnessWeight = atof(argv[4]);
     string outputDirectory(argv[5]);
 
+    // initialize parameters
     vector<PolygonalPath> curves;
     Cluster* rootCluster = NULL;
     Grid* g = NULL;
     
-    // load files + initialize parameters
+    // load files + assign parameters
     cout << "Loading Files into parameters..." << endl;
     initExperiment(filename, rootCluster, g, curves, gridResolution);
 

@@ -12,9 +12,9 @@
 
 
 typedef struct Cluster{
-    std::string name;  // amount of curves
+    std::string name;  // f"{name of parent}:{amount of curves in this cluster}"
     std::vector<Cluster*> children;
-    std::vector<int> indices;
+    std::vector<int> indices;  // original index of the trajectories in the dataset
     std::vector<float> curveErrors;
     std::pair<Vector*,Vector*> vectorField;  // { [x1, x2, ...], [y1, y2, ...] }  // each vector is linear, but contains 2 vectors of R^2 elements to represent the whole grid
     Cluster* parent;

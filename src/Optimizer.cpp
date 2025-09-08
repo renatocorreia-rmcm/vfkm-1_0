@@ -19,20 +19,22 @@ using namespace std;
 #define xDEBUG
 #define xWRITE_OUT_TO_FILE
 
-Vector *Ax, *Ay;
 
-/******************************************************************************/
+Vector *Ax, *Ay;  // axis of the new VF generated in OPTMIZE step
 
 Optimizer::Optimizer(int size)
 {
-  Ax	= new Vector(size);
-  Ay	= new Vector(size);
+    /*
+        initialize new VF axis
+    */
+    Ax = new Vector(size);
+    Ay = new Vector(size);
 }
 
 Optimizer::~Optimizer()
 {
-  delete Ax;
-  delete Ay;
+    delete Ax;
+    delete Ay;
 }
 
 double computeErrorImplicit

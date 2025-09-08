@@ -9,9 +9,14 @@
 
 using namespace std;
 
-/******************************************************************************/
+
+/*
+    GRID CLASS
+*/
+
 
 Grid::Grid(float x, float y, float w, float h, int resolutionX, int resolutionY):
+    // m_* flags member variable (attribute)
     m_resolutionX(resolutionX),
     m_resolutionY(resolutionY),
     m_x(x),
@@ -19,13 +24,17 @@ Grid::Grid(float x, float y, float w, float h, int resolutionX, int resolutionY)
     m_w(w),
     m_h(h)
 {
-  m_delta_x = (float)m_w / (float)(m_resolutionX - 1);
-  m_delta_y = (float)m_h / (float)(m_resolutionY - 1);
+    // escalas (cordenada grid) / (cordenada mundo real)
+    m_delta_x = (float)m_w / (float)(m_resolutionX - 1);
+    m_delta_y = (float)m_h / (float)(m_resolutionY - 1);
 }
 
-// REQUIRES POINT IN GRID COORDINATE SYSTEM
+
 TriangularFace Grid::getFaceWherePointLies(const Vector2D &v) const
 {
+    /*
+        REQUIRES POINT IN GRID COORDINATE SYSTEM
+    */
     if (  // coordinates out of range
         v.x < 0 || v.x > (m_resolutionX - 1.0) ||
         v.y < 0 || v.y > (m_resolutionY - 1.0)

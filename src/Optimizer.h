@@ -4,6 +4,8 @@
 //#include <vector>
 #include "Grid.h"
 
+
+
 struct ProblemSettings
 {
     Grid &grid;
@@ -21,6 +23,8 @@ struct ProblemSettings
         totalCurveLength(tcl),
         smoothnessWeight(sw) {}
 };
+
+
 
 class Optimizer
 {
