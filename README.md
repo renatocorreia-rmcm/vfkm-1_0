@@ -5,8 +5,16 @@
 
     Go to the src directory and run `make`. This will generate the vfkm binary.
 
-2) ### Data
-    The `data` directory contains sample dataset files. See the description of its structure in `doc/instructions.pdf` - `section 3`.
+2) ### Arguments
+
+    VFKM takes the following: 
+    1. `trajectoryFile`
+    2. `gridResolution`
+    3. `numberOfVectorFields` 
+    4. `smoothnessWeight`
+    5. `outputDirectory`
+
+    The `data` directory contains sample dataset files ready to use.
 
 3) ### Output
     The output of the algorithm is written in the form of tree where the root cluster is represented by "r" and its children are numbered. The vf files contain the vector fields for the cluster and the curve files contain the curves in each cluster.
