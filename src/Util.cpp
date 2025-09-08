@@ -10,29 +10,35 @@
 
 using namespace std;
 
-////////////////////////////////
+
+
+/*
+    CLUSTER CLASS
+*/
+
+
+
 void Cluster::clearChildren(){
+
+    // initialize toProcess (queue of clusters) with children (vector of clusters)
     queue<Cluster*> toProcess;
-
     int numberOfChildren = children.size();
+    for(int i = 0 ; i < numberOfChildren ; ++i) toProcess.push(children.at(i));
 
-    for(int i = 0 ; i < numberOfChildren ; ++i){
-        toProcess.push(children.at(i));
-    }
-
+    // delete each cluster of it
     while(!toProcess.empty()){
+        // load cluster
         Cluster* cluster = toProcess.front();
         toProcess.pop();
-
+        // delete its VF
         delete cluster->vectorField.first;
         delete cluster->vectorField.second;
-
+        // add its children to toProcess queue
         int numberOfChildren = cluster->children.size();
-
         for(int i = 0 ; i < numberOfChildren ; ++i){
             toProcess.push(cluster->children.at(i));
         }
-
+        // delete it
         delete cluster;
     }
 
@@ -40,17 +46,33 @@ void Cluster::clearChildren(){
 }
 
 
-////////////////////////////////
 
-Util::Util()
+/*
+    UTIL STATIC CLASS
+*/
+
+
+
+Util::Util() {}
+
+void Util::loadCurves(
+    string filename, vector<PolygonalPath>& curves,
+    float &xmin, float &xmax, float &ymin, float &ymax, float &tmin, float &tmax  // also loads bounding box of array
+)
 {
-}
+    /*
+    read bounding box and store in given arguments.
+    read raw points {space, time} and store they in curves array
 
-void Util::loadCurves(string filename, vector<PolygonalPath>& curves, float &xmin, float &xmax, float &ymin, float &ymax, float &tmin, float &tmax){
-    cout << "CALLING THIS" << endl;
-    xmin = FLT_MAX;
-    ymin = FLT_MAX;
-    tmin = FLT_MAX;
+    no tesselation yet,
+    but removes consecutive time/space equal points 
+    */
+
+    cout << "loading curves" << endl;
+
+    xmin = +FLT_MAX;
+    ymin = +FLT_MAX;
+    tmin = +FLT_MAX;
     xmax = -FLT_MAX;
     ymax = -FLT_MAX;
     tmax = -FLT_MAX;
@@ -59,18 +81,21 @@ void Util::loadCurves(string filename, vector<PolygonalPath>& curves, float &xmi
     ifstream file (filename.c_str());
     ofstream real_indices("/tmp/real_indices.txt");
     int real_index = 0;
+    
     if (file.is_open())
     {
       file >> xmin >> xmax >> ymin >> ymax >> tmin >> tmax;
-      //file >> ymin >> ymax >> xmin >> xmax >> tmin >> tmax;
 
         vector<pair<Vector2D,float> > curveContents;
 
-        while (file.good()  && !file.eof())  // pick lines (coordinates {space, time}) until end of file
+        while (file.good()  && !file.eof()) 
         {
+            /*
+                pick lines (coordinates {space, time}) until end of file
+            */
+
             float x,y,t;
             file >> x >> y >> t;
-            //file >> y >> x >> t;
 
             if(x == 0 && y == 0 && t == 0)  // finished curve
             {  
@@ -97,27 +122,36 @@ void Util::loadCurves(string filename, vector<PolygonalPath>& curves, float &xmi
             } 
             else  // append new point {space, time} to curve
             {
-                pair<Vector2D, float> newPoint = make_pair(Vector2D(x,y), t);
+                pair<Vector2D, float> newPoint = {Vector2D(x,y), t};
+
                 if (curveContents.size() == 0)  // is the first point
-                    curveContents.push_back(newPoint);
-                else if (t == curveContents.back().second)  // repeated last timestamp - ignore this point
-                    continue;
-                else if (x == curveContents.back().first.X() && y == curveContents.back().first.Y())  // repeated last position - ignore this point
-                    continue;
+                    curveContents.push_back(newPoint);  // regular push
+
+                else if (t == curveContents.back().second)  // repeated last timestamp
+                    continue;  //  ignore this point
+                else if (x == curveContents.back().first.X() && y == curveContents.back().first.Y())  // repeated last position
+                    continue;  // ignore this point
+
                 else  // regular point in trajectory
-                    curveContents.push_back(newPoint);
+                    curveContents.push_back(newPoint);  // regular push
             }
         }
+
         file.close();
     }
-    else{
+    else
+    {
         cerr << "Unable to open file " << filename << endl;
     }
 
 
+    // output readed data
+
     int numberOfCurvesRead = curves.size();
-    ofstream outfile("msr_campus_cropped.txt");
-    outfile << xmin << " " << xmax << " " << ymin << " " << ymax << " " << tmin << " " << tmax;
+    ofstream outfile("read_curves.txt");
+
+    outfile << xmin << " " << xmax << " " << ymin << " " << ymax << " " << tmin << " " << tmax;  // bounding box
+
     for(int i = 0 ; i < numberOfCurvesRead ; ++i){
         //cout << "Curve " << i << " = " << curves.at(i).toString() << endl;
         PolygonalPath &curveContents = curves.at(i);
@@ -134,31 +168,37 @@ void Util::loadCurves(string filename, vector<PolygonalPath>& curves, float &xmi
 
 
 
-#ifdef DEBUG
-    int numberOfCurvesRead = curves.size();
+    #ifdef DEBUG
+        int numberOfCurvesRead = curves.size();
 
-    cout << "numberOfCurvesRead = " << numberOfCurvesRead << endl;
+        cout << "numberOfCurvesRead = " << numberOfCurvesRead << endl;
 
-    for(int i = 0 ; i < numberOfCurvesRead ; ++i){
-        cout << "Curve " << i << " = " << curves.at(i).toString() << endl;
-    }
-#endif   
+        for(int i = 0 ; i < numberOfCurvesRead ; ++i){
+            cout << "Curve " << i << " = " << curves.at(i).toString() << endl;
+        }
+    #endif   
 }
 
 void Util::loadCurves(std::string filename, std::vector<PolygonalPath>& curves){
-    float xmin;
-    float xmax;
-    float ymin;
-    float ymax;
-    float tmin;
-    float tmax;
-
+    /*
+        runs loadCurves without loading bounding box (See loadCurves)
+    */
+    float xmin, xmax, ymin, ymax, tmin, tmax;
     loadCurves(filename, curves, xmin,xmax,ymin,ymax,tmin,tmax);
 }
 
-void lat_long_to_mercator(float &x, float &y,
-                          float latitude,
-                          float longitude)
+
+
+/*
+    NOT USED
+*/
+
+
+
+void lat_long_to_mercator(
+    float &x, float &y,
+    float latitude, float longitude
+)
 {
     float lat_rad = latitude * (M_PI / 180.f);
     y = logf(1.0/cosf(lat_rad) + tanf(lat_rad));
@@ -167,12 +207,14 @@ void lat_long_to_mercator(float &x, float &y,
 
 #include <cstdlib>
 
-void Util::loadCurvesAndProject(std::string filename, std::vector<PolygonalPath>& curves,
-                                 float &xmin, float &xmax, float &ymin, float &ymax,
-                                 float &tmin, float &tmax){
-    xmin = FLT_MAX;
-    ymin = FLT_MAX;
-    tmin = FLT_MAX;
+void Util::loadCurvesAndProject(
+    std::string filename, std::vector<PolygonalPath>& curves,
+    float &xmin, float &xmax, float &ymin, float &ymax, float &tmin, float &tmax  // bounding box
+)
+{
+    xmin = +FLT_MAX;
+    ymin = +FLT_MAX;
+    tmin = +FLT_MAX;
     xmax = -FLT_MAX;
     ymax = -FLT_MAX;
     tmax = -FLT_MAX;
@@ -247,7 +289,10 @@ void Util::loadCurvesAndProject(std::string filename, std::vector<PolygonalPath>
 #define rads_over_degrees (3.1415926535897931 / 180.0)
 #include <cmath>
 
-void Util::to_mercator(const float &lat, const float &lon, float &xMerc, float &yMerc){
+void Util::to_mercator(
+    const float &lat, const float &lon, float &xMerc, float &yMerc
+)
+{
     float latitude = lat * rads_over_degrees;
     xMerc = lon * rads_over_degrees;
     yMerc = log(tan(latitude) + 1.0/cos(latitude));
