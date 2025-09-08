@@ -35,7 +35,7 @@ void initExperiment(
     ss << curves.size();
     rootCluster->name = ss.str();
     rootCluster->parent = NULL;
-    // each vector is linear, but contains R^2 elements to represent the whole grid
+    // each axis array is linear, but contains R^2 elements to represent the whole grid
     Vector* rootVFX = new Vector(gridResolution * gridResolution);
     rootVFX->setValues(0.0);
     Vector* rootVFY = new Vector(gridResolution * gridResolution);
@@ -155,20 +155,24 @@ int main(int argc, char *argv[]){
     Optimizer op(g->getResolutionX() * g->getResolutionY());  // 
     int numberOfCurves = currentCluster->indices.size();
 
+    // intialize maps
     unsigned short mapCurveToVF[numberOfCurves];
     float mapCurveToError[numberOfCurves];
     unsigned int mapCurveToIndexInCurveVector[numberOfCurves];
-    vector<float> mapVectorFieldToError;
+
     vector<PolygonalPath> curvesInCurrentCluster;
-
+    
     for(int i = 0 ; i < numberOfCurves ; ++i){
-        mapCurveToError[i] = 0;
-        mapCurveToVF[i] = -1;
-
-        curvesInCurrentCluster.push_back(curves.at(currentCluster->indices.at(i)));
-        mapCurveToIndexInCurveVector[i] = currentCluster->indices.at(i);
+        /*
+        here `current cluster` is the `root cluster`
+        */
+       mapCurveToError[i] = 0;
+       mapCurveToVF[i] = -1;
+       
+       mapCurveToIndexInCurveVector[i] = currentCluster->indices.at(i);
+       curvesInCurrentCluster.push_back(curves.at(currentCluster->indices.at(i)));
     }
-
+    
     // initialize empty vector fields
     vector<pair<Vector*,Vector*> > vectorFields;
     int gridDimension  = g->getResolutionX() * g->getResolutionY();
@@ -178,24 +182,26 @@ int main(int argc, char *argv[]){
         Vector* yComponent = new Vector(gridDimension);
         vectorFields.push_back(make_pair(xComponent, yComponent));
     }
-
+    
     // optimize
     op.optimizeImplicitFastWithWeights(
         *g, numberOfVectorFields, curvesInCurrentCluster, vectorFields, &(mapCurveToVF[0]), mapCurveToError,smoothnessWeight
     );
-
+    
     //count number of curves for each vf
-    mapVectorFieldToError = vector<float>(vectorFields.size(),0);
     int numberOfChildren = vectorFields.size();
     int numberOfCurvesPerVF[numberOfChildren];
     for(int i = 0 ; i < numberOfChildren ; ++i){
         numberOfCurvesPerVF[i] = 0;
     }
 
+    // initilialize error map
+    vector<float> mapVectorFieldToError;
+    mapVectorFieldToError = vector<float>(vectorFields.size(),0);
+
     //compute error by vector field and total error
     vector<vector<int> > mapCurvesToClusters(numberOfChildren,vector<int>());
     vector<vector<float> > mapCurveErrorsToClusters(numberOfChildren,vector<float>());
-
 
     for(int i = 0 ; i < numberOfCurves ; ++i){
         vector<int>& curveCluster
