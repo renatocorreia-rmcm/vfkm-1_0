@@ -56,9 +56,8 @@ void saveExperiment(string directory, string currentFileLoaded, Cluster* root){
     ofstream experimentFile(ss.str().c_str());
     experimentFile << currentFileLoaded << endl;
 
-    //write hierarchy
+    // write hierarchy
     queue<Cluster*> nodesToProcess;
-
     nodesToProcess.push(root);
 
     //hack
@@ -68,18 +67,20 @@ void saveExperiment(string directory, string currentFileLoaded, Cluster* root){
     experimentFile << "-1 r " << endl;
 
     while(!nodesToProcess.empty()){
+        // take next cluster
         Cluster* c = nodesToProcess.front();
         nodesToProcess.pop();
 
-        string name = mapClusterPath[c];
-
         //write curve indices file
+        string clusterName = mapClusterPath[c];
+
         stringstream curveFileName;
-        curveFileName << directory << "/curves_" << name << ".txt";
+        curveFileName << directory << "/curves_" << clusterName << ".txt";
+
         ofstream curveIndicesFile(curveFileName.str().c_str());
-        int numberOfCurves = c->indices.size();
 
         //cout << "NumCurves " << numberOfCurves << " errors " << c->curveErrors.size() << endl;
+        int numberOfCurves = c->indices.size();
         assert(numberOfCurves == (int)c->curveErrors.size());
 
         for(int i = 0 ; i < numberOfCurves ; ++i){
@@ -87,9 +88,9 @@ void saveExperiment(string directory, string currentFileLoaded, Cluster* root){
         }
         curveIndicesFile.close();
 
-//write vector field file file
+        //write vector field file
         stringstream vectorFieldFileName;
-        vectorFieldFileName << directory << "/vf_" << name << ".txt";
+        vectorFieldFileName << directory << "/vf_" << clusterName << ".txt";
         ofstream vectorFieldFile(vectorFieldFileName.str().c_str());
         Vector* xComponent = c->vectorField.first;
         Vector* yComponent = c->vectorField.second;
@@ -109,10 +110,10 @@ void saveExperiment(string directory, string currentFileLoaded, Cluster* root){
             Cluster* child = c->children.at(i);
 
             stringstream ss;
-            ss << name << "_" <<  i;
+            ss << clusterName << "_" <<  i;
             mapClusterPath[child] = ss.str();
 
-            experimentFile << name << " " << ss.str() << endl;
+            experimentFile << clusterName << " " << ss.str() << endl;
 
             nodesToProcess.push(child);
         }
@@ -195,46 +196,51 @@ int main(int argc, char *argv[]){
         numberOfCurvesPerVF[i] = 0;
     }
 
-    // initilialize error map
-    vector<float> mapVectorFieldToError;
-    mapVectorFieldToError = vector<float>(vectorFields.size(),0);
-
-    //compute error by vector field and total error
-    vector<vector<int> > mapCurvesToClusters(numberOfChildren,vector<int>());
+    // initilialize maps
+    vector<float> mapVectorFieldToError = vector<float>(vectorFields.size(),0);  // VF -> error
+    vector<vector<int> > mapCurvesToClusters(numberOfChildren,vector<int>());  //  
     vector<vector<float> > mapCurveErrorsToClusters(numberOfChildren,vector<float>());
-
+    
+    // takes references and populate curves and errors of each cluster
     for(int i = 0 ; i < numberOfCurves ; ++i){
         vector<int>& curveCluster
-                = mapCurvesToClusters.at(mapCurveToVF[i]);
+            = mapCurvesToClusters.at(mapCurveToVF[i]);
         vector<float>& curveErrorsCluster
-                = mapCurveErrorsToClusters.at(mapCurveToVF[i]);
+            = mapCurveErrorsToClusters.at(mapCurveToVF[i]);
 
         curveCluster.push_back(mapCurveToIndexInCurveVector[i]);
         curveErrorsCluster.push_back(mapCurveToError[i]);
 
+        numberOfCurvesPerVF[mapCurveToVF[i]] += 1;
+
         float &error = mapVectorFieldToError.at(mapCurveToVF[i]);
         error += mapCurveToError[i];
-        numberOfCurvesPerVF[mapCurveToVF[i]] += 1;
     }
 
-    //update cluster struct
-    currentCluster->clearChildren();
+    // update cluster struct
+    /*
+    initialize a cluster object for each vector field created
+    */
+    currentCluster->clearChildren();  // root cluster
     for(int i = 0 ; i < numberOfChildren ; ++i){
         Cluster* c = new Cluster();
+        currentCluster->children.push_back(c);
+
         c->children.clear();
         c->parent = currentCluster;
+
         stringstream ss;
         ss << currentCluster->name << ":" << i;
         c->name = ss.str();
+
         c->error = mapVectorFieldToError[i];
         c->indices = mapCurvesToClusters.at(i);
         c->curveErrors = mapCurveErrorsToClusters.at(i);
-        currentCluster->children.push_back(c);
-
         c->vectorField = vectorFields.at(i);
 
         float maxE = -1000;
-        for(int j = 0 ; j < (int)c->curveErrors.size() ; ++j){
+        for(int j = 0 ; j < (int)c->curveErrors.size() ; ++j)
+        {
             float currentError = c->curveErrors.at(j);
             if(currentError > maxE)
                 maxE = currentError;
@@ -242,10 +248,10 @@ int main(int argc, char *argv[]){
         c->maxError = maxE;
     }
 
-    //
-    saveExperiment(outputDirectory, filename, rootCluster);
+    // save
+    saveExperiment(outputDirectory, filename, rootCluster);  // root cluster is currentCluster; his childrens was assigneds
 
-    //clean memory
+    // clean memory
     cout << "Cleaning Memory" << endl;
     for(int i = 0 ; i < numberOfVectorFields ; ++i){
         std::pair<Vector*, Vector*> &vfs = vectorFields.at(i);
