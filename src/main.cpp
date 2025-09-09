@@ -152,29 +152,33 @@ int main(int argc, char *argv[]){
     cout << "Loading Files into parameters..." << endl;
     initExperiment(filename, rootCluster, g, curves, gridResolution);
 
-    //optimize
+    // OPTIMIZE
     cout << "Optimizing..." << endl;
+
+    // initialize optimizer
+    Optimizer op(g->getResolutionX() * g->getResolutionY());
+
+    // initialize currentCluster = rootcluster
     Cluster* currentCluster = rootCluster;
-
-    Optimizer op(g->getResolutionX() * g->getResolutionY());  // 
     int numberOfCurves = currentCluster->indices.size();
+    vector<PolygonalPath> curvesInCurrentCluster;
 
-    // intialize maps
+    // intialize maps (index = key)
     unsigned short mapCurveToVF[numberOfCurves];
     float mapCurveToError[numberOfCurves];
     unsigned int mapCurveToIndexInCurveVector[numberOfCurves];
 
-    vector<PolygonalPath> curvesInCurrentCluster;
-    
+    // assign parameters
     for(int i = 0 ; i < numberOfCurves ; ++i){
-        /*
-        here `current cluster` is the `root cluster`
-        */
-       mapCurveToError[i] = 0;
-       mapCurveToVF[i] = -1;
-       
-       mapCurveToIndexInCurveVector[i] = currentCluster->indices.at(i);
-       curvesInCurrentCluster.push_back(curves.at(currentCluster->indices.at(i)));
+        // here `current cluster` is the `root cluster`
+
+        // empty assigns
+        mapCurveToError[i] = 0;
+        mapCurveToVF[i] = -1;
+        
+        // assign
+        mapCurveToIndexInCurveVector[i] = currentCluster->indices.at(i);
+        curvesInCurrentCluster.push_back(curves.at(currentCluster->indices.at(i)));
     }
     
     // initialize empty vector fields
