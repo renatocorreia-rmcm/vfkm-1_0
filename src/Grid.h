@@ -103,6 +103,7 @@ typedef struct Intersection {
 
 class Grid {
 private:
+public:
     int m_resolutionX, m_resolutionY; // number of vertices along the axis
 
     //domain // m_* is used to distinct member variables from local ones
@@ -111,7 +112,6 @@ private:
 
     float m_delta_x, m_delta_y;  // distance between adjacent grid vertices
 
-public:
     Grid(float x, float y, float w, float h, int resolutionX, int resolutionY);
     TriangularFace getFaceWherePointLies(const Vector2D &v) const;
 
