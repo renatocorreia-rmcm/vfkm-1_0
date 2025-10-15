@@ -204,3 +204,8 @@ bool Vector2D::intersect(const Vector2D &p1, const Vector2D &p2,
     }
 
 }
+
+std::ostream& operator<<(std::ostream& os, const Vector2D& v) {
+    os << v.toString();
+    return os;
+}

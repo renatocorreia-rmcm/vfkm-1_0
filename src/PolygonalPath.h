@@ -6,9 +6,9 @@
 class PolygonalPath
 {
 private:
+public:
     std::vector<std::pair<Vector2D, float> > points; //space x time
     std::vector<Vector2D> tangents;  // every point has a corresponding tangent  // point: space; tangent: direction, intensity
-public:
     PolygonalPath();
     PolygonalPath(std::vector<std::pair<Vector2D,float> > points);
     PolygonalPath(
@@ -35,4 +35,6 @@ public:
 
     std::string toString();
     float length();
+
+    
 };
