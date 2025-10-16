@@ -45,8 +45,10 @@ double computeErrorImplicit
  const CurveDescription &curve)
 {
     double error = 0.0;
+
     Vector vx(2*curve.segments.size());
     Vector vy(2*curve.segments.size());
+    
     for (size_t i = 0; i<curve.segments.size(); ++i) {
         curve.segments[i].add_cx(vx, vfXComponent);
         curve.segments[i].add_cx(vy, vfYComponent);
@@ -66,70 +68,51 @@ double computeErrorImplicit
     return error * (1.0 - smoothnessWeight) / (totalCurveLength);
 }
 
-/*
-void computeErrorImplicitConstraints(Grid &g, const Vector &vfXComponent, const Vector& vfYComponent,
-                                     int curveIndex, vector<vector<Intersection> >& mapCurveToConstraints){
-    vector<Intersection> &constraints = mapCurveToConstraints[curveIndex];
-    int numberOfConstraints = constraints.size();
-    Vector cx(3 * (numberOfConstraints / 2));
-    cx.setValues(0.0f);
-    for(int i = 0 ; i < numberOfConstraints ; i += 2){
-       Intersection currentIntersection = constraints.at(i);
-       Intersection nextIntersection = constraints.at(i+1);
-       //cx[vfXComponent[currentIntersection.indexV1];
-    }
-}
-*/
-
-//////// With Weights
-#define xDEBUG
-#define EPSILON 0.000000001
-
-template <int P>
-struct FastPow
-{
-    static inline float value(float x) { return x * FastPow<P-1>::value(x); }
-};
-
-template <>
-struct FastPow<1>
-{
-    static inline float value(float x) { return x; }
-};
 
 void Optimizer::multiplyByA(const Vector& x, Vector &resultX, Vector &diagATA, ProblemSettings &prob)
 {
+    /*
+        USELESS IF CAN USE SCIPY SOLVER 
+    */
     Grid &grid = prob.grid;
     const vector<int> &curveIndices = prob.curveIndices;
     const vector<CurveDescription> &curve_descriptions = prob.curve_descriptions;
     VECTOR_TYPE totalCurveLength = prob.totalCurveLength;
     VECTOR_TYPE smoothnessWeight = prob.smoothnessWeight;
 
-    Vector Ax(x);
+
     resultX.setValues(0.0);
-
-    int numberOfVertices = grid.getResolutionX() * grid.getResolutionY();
-
+    
+    for (size_t k=0; k<curveIndices.size(); ++k) {  // for each curve in cluster
+        
+        int i = curveIndices[k];  // get its index
+        const CurveDescription &curve = curve_descriptions[i];  // load it
+        
+        float k_global = (1.0f - smoothnessWeight) / totalCurveLength;  // normalization factor
+        curve.add_cTcx(resultX, x, k_global);  // add contribution of this curve to result
+    }
+    
+    Vector Ax(x);
+    
     // L . x
     grid.multiplyByLaplacian2(Ax, diagATA); // gets overwritten the second time, but whatever.
     // L^T . L . x
-    grid.multiplyByLaplacian2(Ax, diagATA);
+    grid.multiplyByLaplacian2(Ax, diagATA);  
+    
+    int numberOfVertices = grid.getResolutionX() * grid.getResolutionY();
     Ax.scale(smoothnessWeight/numberOfVertices);
-
-    for (size_t k=0; k<curveIndices.size(); ++k) {
-        int i = curveIndices[k];
-        const CurveDescription &curve = curve_descriptions[i];
-        float k_global = (1.0f - smoothnessWeight) / totalCurveLength;
-        curve.add_cTcx(resultX, x, k_global);
-    }
-
+    
     resultX.add(Ax);
 }
 
-/******************************************************************************/
+
 
 void cg_solve(ProblemSettings &prob, const Vector &b, Vector &x)  // conjugate gradient method (for solving linear systems)
 {
+    /*
+        USELESS IF CAN USE SCIPY SOLVER 
+    */
+
     // mat m(prob);
     // DiagonalPrec prec(m);
     int max_iter = 10000;
@@ -137,6 +120,9 @@ void cg_solve(ProblemSettings &prob, const Vector &b, Vector &x)  // conjugate g
     VECTOR_TYPE resid;
     // CG(m, x, b, prec, max_iter, tol);
 
+    // b is the right-hand side. We solve A x = b using Conjugate Gradient,
+    // where the matrix-vector product is provided by Optimizer::multiplyByA.
+    // x is the initial guess and will contain the solution on return.
     VECTOR_TYPE normb = b.length();
     Vector r(x.getDimension());
     Vector z(x.getDimension());
@@ -192,19 +178,8 @@ void cg_solve(ProblemSettings &prob, const Vector &b, Vector &x)  // conjugate g
     }
 };
 
-void print_problem(ProblemSettings &prob, const Vector &bx, const Vector &by)
-{
-    int v = prob.grid.getResolutionX() * prob.grid.getResolutionY();
-    Vector foo(v);
-    for (int i=0; i<v; ++i) {
-        Vector t(v), output(v);
-        t[i] = 1;
-        Optimizer::multiplyByA(t, output, foo, prob);
-        cout << output.toString() << endl;
-    }
-    cout << bx.toString() << endl;
-    cout << by.toString() << endl;
-}
+
+
 
 void optimizeVectorFieldWithWeights(  // optimize a single vector field (using smoothness)
     Grid &grid, Vector &initialGuessX, Vector &initialGuessY,
@@ -214,20 +189,31 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
     float smoothnessWeight
 )
 {
+    
+    // optimizeVectorFieldWithWeights: given an initial guess for the vector
+    // field components, construct the RHS from curve constraints and solve
+    // two independent linear systems (one per component) using CG. The
+    // solution overwrites the provided initialGuessX/Y vectors.
 
-    ///compute independent terms
+
+
+    // Compute independent (right-hand side) terms for the linear systems
+    // corresponding to the X and Y components of the vector field.
     int numberOfVertices = grid.getResolutionX() * grid.getResolutionY();
 
     Vector indepx(numberOfVertices), indepy(numberOfVertices);
     indepx.setValues(0.0f);
     indepy.setValues(0.0f);
 
+    // Sum contributions from each curve segment into the RHS vectors.
+    // Each segment's influence is weighted by its relative curve length and
+    // the (1 - smoothnessWeight) data-term factor.
     for(size_t k = 0; k < curveIndices.size() ; ++k) {  // for each curve
         int i = curveIndices[k];
         const CurveDescription &curve = curve_descriptions[i];
 
         for (size_t j=0; j<curve.segments.size(); ++j) {  // for each segment in curve
-            float k = (1.0 - smoothnessWeight) * (curve.segments[j].time[1] - curve.segments[j].time[0])/totalCurveLength;  // weighting factor  // how much influence a single segment has in the optimization 
+            float k = (1.0 - smoothnessWeight) * (curve.segments[j].time[1] - curve.segments[j].time[0])/totalCurveLength;  // weighting factor
             curve.segments[j].add_cTx(indepx, curve.rhsx, k);
             curve.segments[j].add_cTx(indepy, curve.rhsy, k);
         }
@@ -252,6 +238,8 @@ pair< vector<int>, vector< vector<int> > > compute_first_assignment
  float totalCurveLength,
  float smoothnessWeight)
 {
+    // Initialize per-curve errors to a large value so first vector fields
+    // get assigned to the worst-fitting curves.
     vector<double> errors(curves.size(), 1e10);
 
     vector<pair<Vector, Vector> > vector_fields(numberOfVectorFields);
@@ -265,7 +253,8 @@ pair< vector<int>, vector< vector<int> > > compute_first_assignment
 //            curveIndices.push_back(index);
 //        }
 //        else
-        curveIndices.push_back(max_element(errors.begin(), errors.end()) - errors.begin());
+    // Seed each vector field with the currently worst-fitting curve.
+    curveIndices.push_back(max_element(errors.begin(), errors.end()) - errors.begin());
 
         //optimize
         pair<Vector, Vector> &vs = vector_fields[i];
@@ -279,6 +268,8 @@ pair< vector<int>, vector< vector<int> > > compute_first_assignment
         optimizeVectorFieldWithWeights(grid, xComponent, yComponent,
                                        curveIndices, curves, totalCurveLength, smoothnessWeight);
 
+        // After optimizing the candidate vector field, update the per-curve
+        // error estimate (best known error across seeded fields).
         for (size_t j=0; j < curves.size(); ++j) {
             errors[j] = min(errors[j], computeErrorImplicit(grid, xComponent, yComponent, totalCurveLength, smoothnessWeight, curves[j]));
         }
@@ -298,6 +289,12 @@ pair< vector<int>, vector< vector<int> > > compute_first_assignment
     return make_pair(result, result_indices);
 }
 
+// compute_first_assignment: Generate an initial clustering of curves into
+// vector fields. Strategy: for each vector field, pick a (currently) worst-
+// fitted curve, optimize a vector field for that single-curve seed, and
+// then assign every curve to its best candidate among the generated
+// vector fields. Returns (mapCurveToVectorField, mapVectorFieldCurves).
+
 void set_constraints(
     vector<CurveDescription> &curve_descriptions,  // store local of validatade and tesselated paths (processed curves)
     float &totalCurveLength,
@@ -311,24 +308,27 @@ void set_constraints(
     for(int i = 0 ; i < numberOfCurves ; ++i) {
 
         PolygonalPath &p = curves.at(i);
-        
-        // check if points are in non decreasing time order
+
+        // Validate that input times are non-decreasing. This check helps
+        // catch malformed input before clipping/tessellation.
         for (size_t j=0; j<p.numberOfPoints()-1; ++j) {
             if (p.getPoint(j+1).second < p.getPoint(j).second) {
                 cerr << "Line is broken, has backward time." << endl;
             }
         }
-        
-        bool bad_break = false;        
 
-        grid.clipLine(p);  // tesselate path
+        bool bad_break = false;
 
-        // check increasing time order in tesselated path
+        // Clip / tesselate the path to the grid so that segment constraint
+        // contributions can be computed on the discrete grid.
+        grid.clipLine(p);
+
+        // Verify tesselation didn't introduce non-monotonic times.
         for (size_t j=0; j<p.numberOfPoints()-1; ++j) {
             if (p.getPoint(j+1).second < p.getPoint(j).second) {
                 cerr << i << " - Line clipper is broken, introduced backward time: ";
                 cerr << p.getPoint(j+1).second << " " << p.getPoint(j).second << endl;
-                // exit(1);
+                // Mark this curve as invalid so it won't contribute constraints.
                 bad_break = true;
                 break;
             }
@@ -338,12 +338,18 @@ void set_constraints(
         curve.index = i;
         curve.length = 0;
         if (!bad_break) {
-            curve = grid.curve_description(p);  // create curve object of this valid and tesselated path
+            // Construct the CurveDescription (segments, rhs, length) from the
+            // tesselated polygonal path using grid-local operations.
+            curve = grid.curve_description(p);
             totalCurveLength += curve.length;
         }
         curve_descriptions.push_back(curve);
     }
 }
+
+// set_constraints: prepare per-curve CurveDescription objects from raw
+// PolygonalPath inputs. Also accumulates the total length used for
+// normalization in optimization weightings.
 
 typedef vector< pair<Vector, Vector> > AllVectorFields;
 typedef vector< CurveDescription > AllConstraints;
@@ -357,13 +363,17 @@ void optimize_all_vector_fields(  // OPTMIZE STEP
     float smoothnessWeight
 )
 {
+    // Optimize each vector field independently using its assigned curves.
+    // This is the M-step like step in an EM/clustering view: given
+    // assignments (mapVectorFieldCurves) optimize the parameters (vector
+    // field components) that minimize the per-cluster error.
     for(size_t j = 0 ; j < vectorFields.size() ; ++j) {  // for each vector field
-        // load vector field data
         pair<Vector, Vector> &currentVectorField = vectorFields.at(j);
         const vector<int>& curveIndices = mapVectorFieldCurves.at(j);
         Vector &xComponent = currentVectorField.first;
         Vector &yComponent = currentVectorField.second;
-        // optimize the vector field
+        // Solve for the best vector field (X and Y components) given the
+        // set of curves assigned to this vector field.
         optimizeVectorFieldWithWeights(
             grid, xComponent, yComponent, curveIndices, curves, totalCurveLength, smoothnessWeight
         );
@@ -401,6 +411,11 @@ double get_total_error(const vector<CurveDescription> &curves,
     return totalError;
 }
 
+// get_total_error: compute the overall energy being minimized. It is the
+// sum of per-curve data-fitting errors (computed with computeErrorImplicit)
+// plus the smoothness penalty for each vector field (scaled by the
+// fraction of total curve length assigned to that field).
+
 
 void optimize_assignments(  /* ASSIGN STEP */
     int &total_change,
@@ -420,6 +435,10 @@ void optimize_assignments(  /* ASSIGN STEP */
     total_change = 0;
     size_t numberOfCurves = curves.size();
     size_t numberOfVectorFields = vectorFields.size();
+    // For each curve, find the vector field that gives the lowest per-curve
+    // error and record whether an assignment changed. This is the
+    // E-step in the clustering view: keep parameters fixed and update
+    // cluster assignments to minimize the energy.
     for(size_t i = 0 ; i < numberOfCurves ; ++i){
         bool change = false;
         const CurveDescription& currentCurve = curves.at(i);
@@ -446,7 +465,7 @@ void optimize_assignments(  /* ASSIGN STEP */
 
         totalError += error;
 
-        //assign
+        // Assign the best vector field to this curve (and store its error).
         mapCurveToVectorField[i] = newVectorFieldIndex;
         mapCurveToError[i] = error;
     }
@@ -464,19 +483,29 @@ void optimize_assignments(  /* ASSIGN STEP */
     }
 }
 
+// optimize_assignments: assign each curve to the vector field that
+// minimizes its contribution to the objective, then update the
+// per-vector-field curve lists. Also emits the total number of changes
+// and the summed error over curves.
+
 void repopulate_empty_cluster(vector<vector<int> > &mapVectorFieldCurves,
                               unsigned short *mapCurveToVectorField,
                               AllVectorFields &vectorFields)
 {
     size_t numberOfVectorFields = vectorFields.size();
 
+    // If a cluster has no assigned curves, re-populate it by splitting the
+    // largest existing cluster into two. This avoids empty clusters and
+    // keeps the number of vector fields constant.
     for (size_t i=0; i<numberOfVectorFields; ++i) {
         vector<int> &container = mapVectorFieldCurves.at(i);
         if (container.size() == 0) {
+            // reset vector field to zero before refill
             vectorFields[i].first.setValues(0.0f);
             vectorFields[i].second.setValues(0.0f);
             int max_index = -1;
             size_t sz = 0;
+            // find the largest cluster
             for (size_t j=0; j<numberOfVectorFields; ++j) {
                 if (mapVectorFieldCurves[j].size() > sz) {
                     sz = mapVectorFieldCurves[j].size();
@@ -484,6 +513,7 @@ void repopulate_empty_cluster(vector<vector<int> > &mapVectorFieldCurves,
                 }
             }
             vector<int> n1, n2;
+            // split the largest cluster into two by alternating assignment
             for (size_t j=0; j<sz; ++j) {
                 int curve = mapVectorFieldCurves[max_index][j];
                 if (j % 2) {
@@ -556,4 +586,10 @@ void Optimizer::optimizeImplicitFastWithWeights(
         finalVectorFields[i].second->setValues(vectorFields[i].second);
     }
 }
+
+// optimizeImplicitFastWithWeights: top-level routine that performs a
+// K-means-like alternating optimization for clustering curves into a
+// fixed number of vector fields. It alternates between optimizing the
+// vector fields given assignments and reassigning curves to their best
+// vector fields until convergence (no changes) or a max iteration cap.
 

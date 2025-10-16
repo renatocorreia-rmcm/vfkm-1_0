@@ -38,18 +38,6 @@ struct Segment {
         summand[index]   += v1;
         summand[index+1] += v2;
     }
-    /*inline void add_cx(float &v1, float &v2, const Vector &field) const {
-        float v1 =
-            field[endpoint[0].face.indexV1] * endpoint[0].barycentric_coords[0] +
-            field[endpoint[0].face.indexV2] * endpoint[0].barycentric_coords[1] +
-            field[endpoint[0].face.indexV3] * endpoint[0].barycentric_coords[2];
-        float v2 =
-            field[endpoint[1].face.indexV1] * endpoint[1].barycentric_coords[0] +
-            field[endpoint[1].face.indexV2] * endpoint[1].barycentric_coords[1] +
-            field[endpoint[1].face.indexV3] * endpoint[1].barycentric_coords[2];
-        summand[index]   += v1;
-        summand[index+1] += v2;
-    }*/
 
     // remember that v is necessarily of the format Lambda . v
     inline void add_cTx(Vector &resulting_field, const Vector &v, float w=1.0f) const {

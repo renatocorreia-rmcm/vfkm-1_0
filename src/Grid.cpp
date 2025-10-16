@@ -680,10 +680,3 @@ CurveDescription Grid::curve_description(const PolygonalPath &path) const
     }
     return result;
 }
-
-static bool pair_comparator(const pair<float, Intersection> &p1,
-                            const pair<float, Intersection> &p2)
-{
-    return p1.first < p2.first;
-}
-

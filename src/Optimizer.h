@@ -8,6 +8,10 @@
 
 struct ProblemSettings
 {
+    // struct carrying problem data for solvers.
+    // - curveIndices: respective to cluster
+    // - totalCurveLength: summed length of all curves (used for normalization)
+    
     Grid &grid;
     const std::vector<int> &curveIndices;
     const std::vector<CurveDescription> &curve_descriptions;
@@ -32,16 +36,16 @@ public:
     Optimizer(int size);
     ~Optimizer();
 
+    // Multiply vector(s) by the system matrix A used in the conjugate gradient solver.
+    // The system combines a Laplacian-based smoothness term and data terms coming from curve constraints.
+    // This variant uses a ProblemSettings struct to access grid/curve parameters.
+    
+    // Inputs:
+    //   x        - input vector (length = number of grid vertices)
+    //   resultX  - output (A * x)
+    //   diagM    - workspace / diagonal estimate (may be overwritten)
+    //   prob     - problem settings 
     static void multiplyByA(const Vector& x, Vector &resultX, Vector &diagM, ProblemSettings &prob);
-
-    static void multiplyByA(const Vector& x, const Vector& y, Vector &resultX, Vector &resultY, Grid &grid,
-			    const std::vector<int> &curveIndices,
-                            std::vector< std::vector<Intersection> > &mapCurveToConstraints,
-                            float totalCurveLength, float smoothnessWeight);
-
-    static void multiplyByAWithoutWeights(Vector& x, Vector& y, Vector &resultX,
-                                          Vector &resultY, Grid &grid, std::vector<int> &curveIndices,
-                                          std::vector< std::vector<Intersection> > &mapCurveToConstraints);
 
     void optimizeImplicitFastWithWeights(Grid &grid, int numberOfVectorFields,
                                          std::vector<PolygonalPath> curves,
