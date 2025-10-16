@@ -125,6 +125,15 @@ public:
     TriangularFace getFace(int index);
     TriangularFace getFace(int index, int resolutionX, int resolutionY);
 
+
+
+
+
+
+
+
+
+    
     Vector2D toGrid(const Vector2D &world_point) const {  // convert geographic ("world") coordinates into grid coordinates
         return Vector2D((world_point.X() - m_x) / m_w * (m_resolutionX - 1.0),
                         (world_point.Y() - m_y) / m_h * (m_resolutionY - 1.0));                        
@@ -138,31 +147,11 @@ public:
     inline Vector2D getGridVertex(int index) const {
       return Vector2D(index % m_resolutionX, index / m_resolutionX);
     }
-    inline Vector2D getVertex(int index) const {        
-      return Vector2D(m_x + m_delta_x * (index % m_resolutionX), m_y + m_delta_y * (index / m_resolutionX));
-    }
-    inline Vector2D getVertex(int index,int resolutionX, int resolutionY) const {
-        float delta_x = (float)m_w / (float)(resolutionX - 1);
-        float delta_y = (float)m_h / (float)(resolutionY - 1);
-      return Vector2D(m_x + delta_x * (index % resolutionX), m_y + delta_y * (index / resolutionX));
-    }
-    inline Vector2D getVertex(int rowIndex, int colIndex) const {
-      return Vector2D(m_x + m_delta_x * colIndex, m_y + m_delta_y * rowIndex);
-    }
-
-    void computeVectorFieldImplicit(const Vector& vfXComponent,
-                                    const Vector& vfYComponent,
-                                    const Vector2D& point, Vector2D &result) const;
 
     // return barycentric_coords of point in face.
-    PointLocation locate_point(const Vector2D &point) const;
-
     // If face is fixed, set only barycentric coordinates within face.
     void locate_point(PointLocation &face, const Vector2D &point) const;
 
-    void multiplyByLaplacian(std::vector<Vector2D> &vectorField);
-
-    void operator*(Vector&);
     void multiplyByLaplacian(Vector&, Vector&) const; //multiply both vectorfield by the laplacian
     void multiplyByLaplacian2(Vector &, Vector&); // Second vector stores the diagonal of L^T L for jacobi preconditioning.
 
@@ -171,10 +160,6 @@ public:
 
     CurveDescription curve_description(const PolygonalPath &curve) const;
 
-    void computeConstraints(const PolygonalPath& curve, std::vector<Intersection> & constraints) const;
-    //should be called after calling clip planes
-    //assumes that every segment of the line
-    //lies in a face
     
     struct Inter {  // intersection point
         Vector2D grid_point;  // grid cordinate (world cordinate normalized to grid)
@@ -187,10 +172,6 @@ public:
 
     inline int vertexIndex(int x, int y) const {
         return y * m_resolutionX + x;
-    }
-    inline int faceIndex(int x, int y, bool is_bottom) const {
-        int r = m_resolutionX - 1;
-        return is_bottom ? (y * 2 * r + x) : (y * 2 * r + x + r);
     }
 };
 
