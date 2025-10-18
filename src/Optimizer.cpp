@@ -206,7 +206,7 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
     indepy.setValues(0.0f);
 
     // Sum contributions from each curve segment into the RHS vectors.
-    // Each segment's influence is weighted by its relative curve length and
+    // Each segment's influence is weighted by its relative curve length and 
     // the (1 - smoothnessWeight) data-term factor.
     for(size_t k = 0; k < curveIndices.size() ; ++k) {  // for each curve
         int i = curveIndices[k];
@@ -246,15 +246,10 @@ pair< vector<int>, vector< vector<int> > > compute_first_assignment
 
     for (int i=0; i<numberOfVectorFields; ++i) {
         vector<int> curveIndices;
-//        if(i == 0){
-//            srand(time(NULL));
-//            int index = ((1.0f*rand())/RAND_MAX) * curves.size();
-//            cout << "Initial index " << index << endl;
-//            curveIndices.push_back(index);
-//        }
-//        else
-    // Seed each vector field with the currently worst-fitting curve.
-    curveIndices.push_back(max_element(errors.begin(), errors.end()) - errors.begin());
+
+        // Seed each vector field with the currently worst-fitting curve.
+        
+        curveIndices.push_back(max_element(errors.begin(), errors.end()) - errors.begin());
 
         //optimize
         pair<Vector, Vector> &vs = vector_fields[i];
@@ -289,11 +284,11 @@ pair< vector<int>, vector< vector<int> > > compute_first_assignment
     return make_pair(result, result_indices);
 }
 
-// compute_first_assignment: Generate an initial clustering of curves into
-// vector fields. Strategy: for each vector field, pick a (currently) worst-
-// fitted curve, optimize a vector field for that single-curve seed, and
-// then assign every curve to its best candidate among the generated
-// vector fields. Returns (mapCurveToVectorField, mapVectorFieldCurves).
+// compute_first_assignment: Generate an initial clustering of curves into vector fields.
+// Strategy: for each vector field, pick a (currently) worst- fitted curve,
+// optimize a vector field for that single-curve seed, and
+// then assign every curve to its best candidate among the generated vector fields. 
+// Returns (mapCurveToVectorField, mapVectorFieldCurves).
 
 void set_constraints(
     vector<CurveDescription> &curve_descriptions,  // store local of validatade and tesselated paths (processed curves)
