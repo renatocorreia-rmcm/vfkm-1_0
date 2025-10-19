@@ -12,7 +12,6 @@
 
 #include <cassert>
 
-#include "ConstraintMatrix.h"
 
 using namespace std;
 

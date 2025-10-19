@@ -3,7 +3,7 @@
 FLAGS=-O3 -Wall # release
 
 main:
-	g++ $(FLAGS) -o vfkm main.cpp Vector.cpp PolygonalPath.cpp Vector2D.cc Util.cpp Grid.cpp Optimizer.cpp ConstraintMatrix.cpp -I.
+	g++ $(FLAGS) -o vfkm main.cpp Vector.cpp PolygonalPath.cpp Vector2D.cc Util.cpp Grid.cpp Optimizer.cpp -I.
 
 clean:
 	rm vfkm
