@@ -24,9 +24,6 @@ Grid::Grid(float x, float y, float w, float h, int resolutionX, int resolutionY)
     m_w(w),
     m_h(h)
 {
-    cout << "Grid arguments\n";
-    cout << x << " " << y << " " << w << " " << h << " " << resolutionX << " " << resolutionY << "\n\n";
-
     // escalas (cordenada grid) / (cordenada mundo real)
     m_delta_x = (float)m_w / (float)(m_resolutionX - 1);
     m_delta_y = (float)m_h / (float)(m_resolutionY - 1);
