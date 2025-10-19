@@ -49,14 +49,6 @@ public:
         std::string filename, std::vector<PolygonalPath>&,
         float &xmin, float &xmax, float &ymin, float &ymax, float &tmin, float &tmax  // dataset bounding box (to store, not read)
     );
-
-
-    /* NOT USED */
-    static void loadCurvesAndProject(
-        std::string filename, std::vector<PolygonalPath>&,
-        float &xmin, float &xmax, float &ymin, float &ymax, float &tmin, float &tmax
-    );
-    static void to_mercator(const float &lat, const float &lon, float &xMerc, float &yMerc);
 };
 
 #endif // UTIL_H
