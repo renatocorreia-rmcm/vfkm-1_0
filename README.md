@@ -38,8 +38,6 @@ VFKM-1_0
 |       instructions.pdf          # More details about this program.
 |
 \---src                           # Run `make` here.
-        ConstraintMatrix.cpp
-        ConstraintMatrix.h
         Grid.cpp
         Grid.h
         main.cpp
