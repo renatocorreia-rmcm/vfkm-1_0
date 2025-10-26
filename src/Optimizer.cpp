@@ -68,7 +68,7 @@ double computeErrorImplicit
 }
 
 
-void Optimizer::multiplyByA(const Vector& x, Vector &resultX, Vector &diagATA, ProblemSettings &prob)
+void Optimizer::multiplyByA(const Vector& x, Vector &resultX, ProblemSettings &prob)
 {
     /*
         USELESS IF CAN USE SCIPY SOLVER 
@@ -94,9 +94,9 @@ void Optimizer::multiplyByA(const Vector& x, Vector &resultX, Vector &diagATA, P
     Vector Ax(x);
     
     // L . x
-    grid.multiplyByLaplacian2(Ax, diagATA); // gets overwritten the second time, but whatever.
+    grid.multiplyByLaplacian2(Ax); // gets overwritten the second time, but whatever.
     // L^T . L . x
-    grid.multiplyByLaplacian2(Ax, diagATA);  
+    grid.multiplyByLaplacian2(Ax);  
     
     int numberOfVertices = grid.getResolutionX() * grid.getResolutionY();
     Ax.scale(smoothnessWeight/numberOfVertices);
@@ -127,13 +127,11 @@ void cg_solve(ProblemSettings &prob, const Vector &b, Vector &x)  // conjugate g
     Vector z(x.getDimension());
     Vector q(x.getDimension());
     Vector p(x.getDimension());
-    Vector diagATA(x.getDimension());
 
     VECTOR_TYPE alpha, beta, rho = 1, rho_1 = 1;
 
-    diagATA.setValues(0.0);
     Vector t(x.getDimension());
-    Optimizer::multiplyByA(x, t, diagATA, prob);
+    Optimizer::multiplyByA(x, t, prob);
 
     r.setValues(b);
     r -= t;
@@ -148,7 +146,7 @@ void cg_solve(ProblemSettings &prob, const Vector &b, Vector &x)  // conjugate g
     }
     for (int i=1; i<=max_iter; ++i) {
         z.setValues(r);
-        // z/=diagATA; // precondition
+        // z/=diagATA; // precondition  // I REMOVED BECAUSE IT WAS NOT BEING USED
 
         rho = r.dot(z);
 
@@ -159,7 +157,7 @@ void cg_solve(ProblemSettings &prob, const Vector &b, Vector &x)  // conjugate g
             p.add_scale(z, 1.0, beta);
         }
 
-        Optimizer::multiplyByA(p, q, t, prob);
+        Optimizer::multiplyByA(p, q, prob);
         alpha = rho / p.dot(q);
         x.add_scale(p,  alpha);
         r.add_scale(q, -alpha);

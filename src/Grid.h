@@ -141,7 +141,7 @@ public:
     void locate_point(PointLocation &face, const Vector2D &point) const;
 
     void multiplyByLaplacian(Vector&, Vector&) const; //multiply both vectorfield by the laplacian
-    void multiplyByLaplacian2(Vector &, Vector&); // Second vector stores the diagonal of L^T L for jacobi preconditioning.
+    void multiplyByLaplacian2(Vector &); // In the original version, a second vector stores the diagonal of L^T L for jacobi preconditioning. I removed it beacuse it was computed but not used in the cg implementation
 
     void clipLine(PolygonalPath &p) const;
 

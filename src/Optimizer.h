@@ -45,7 +45,7 @@ public:
     //   resultX  - output (A * x)
     //   diagM    - workspace / diagonal estimate (may be overwritten)
     //   prob     - problem settings 
-    static void multiplyByA(const Vector& x, Vector &resultX, Vector &diagM, ProblemSettings &prob);
+    static void multiplyByA(const Vector& x, Vector &resultX, ProblemSettings &prob);
 
     void optimizeImplicitFastWithWeights(Grid &grid, int numberOfVectorFields,
                                          std::vector<PolygonalPath> curves,

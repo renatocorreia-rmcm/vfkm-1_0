@@ -265,7 +265,7 @@ void Grid::multiplyByLaplacian(Vector &firstComponent, Vector &secondComponent) 
     secondComponent.setValues(newSecondComponent);    
 }
 
-void Grid::multiplyByLaplacian2(Vector &firstComponent, Vector &rowLength2) {
+void Grid::multiplyByLaplacian2(Vector &firstComponent) {
     if(m_resolutionX * m_resolutionY != firstComponent.getDimension()) {
         cout << "Error while multiplying grid by vector. Incompatible dimensions." << endl;
         exit(1);
@@ -279,7 +279,6 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent, Vector &rowLength2) {
 
     //numberOfVectors == numberOfVertices in the grid == resolution * resolution
     for(int i = 0 ; i < numberOfVectors ; ++i){
-        rowLength2[i] = 0;
         int row = i / m_resolutionX;
         int col = i % m_resolutionX;
 
@@ -308,8 +307,6 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent, Vector &rowLength2) {
 
             //newVector.add((vectorField.at(neighIndex) * coef));
             accum1 += coef * (firstComponent[neighIndex]);
-            rowLength2[i] += coef * coef;
-
             degree += coef;
         }
         if(canMoveRight){
@@ -330,8 +327,6 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent, Vector &rowLength2) {
 
             //newVector.add((vectorField.at(neighIndex) * coef));
             accum1 += coef * (firstComponent[neighIndex]);
-            rowLength2[i] += coef * coef;
-
             degree += coef;
         }
         if(canMoveDown){
@@ -354,8 +349,6 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent, Vector &rowLength2) {
             //newVector.add((vectorField.at(neighIndex) * coef));
 
             accum1 += coef * (firstComponent[neighIndex]);
-            rowLength2[i] += coef * coef;
-
             degree += coef;
         }
         if(canMoveUp){
@@ -376,14 +369,11 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent, Vector &rowLength2) {
             //newVector.add((vectorField.at(neighIndex) * coef));
 
             accum1 += coef * (firstComponent[neighIndex]);
-            rowLength2[i] += coef * coef;
-
             degree += coef;
         }
 
         //newVector.add(vectorField.at(i) * (-degree));
         newFirstComponent[i] = accum1 - degree * firstComponent[i];
-        rowLength2[i] += degree * degree;
     }
 
     //vectorField.assign(newVectorField.begin(), newVectorField.end());
