@@ -361,7 +361,7 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent) {
                 coef += horizontalCotangentWeight;
             }
             if(canMoveRight){
-                coef += horizontalCotangentWeight;
+                coef + = horizontalCotangentWeight;
             }
 
             coef /= 2.0;

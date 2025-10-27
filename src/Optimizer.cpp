@@ -71,8 +71,11 @@ double computeErrorImplicit
 void Optimizer::multiplyByA(const Vector& x, Vector &resultX, ProblemSettings &prob)
 {
     /*
-        USELESS IF CAN USE SCIPY SOLVER 
+    for each curve
+    compute partial derivatives of fit error and smoothness error separately
+    then sum them up to get A*x
     */
+
     Grid &grid = prob.grid;
     const vector<int> &curveIndices = prob.curveIndices;
     const vector<CurveDescription> &curve_descriptions = prob.curve_descriptions;
@@ -188,7 +191,7 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
 {
     
     // optimizeVectorFieldWithWeights: given an initial guess for the vector
-    // field components, construct the RHS from curve constraints and solve
+    // field components, construct the RHS from curve constraints (b), and then solve
     // two independent linear systems (one per component) using CG. The
     // solution overwrites the provided initialGuessX/Y vectors.
 
@@ -202,7 +205,7 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
     indepx.setValues(0.0f);
     indepy.setValues(0.0f);
 
-    // Sum contributions from each curve segment into the RHS vectors.
+    // Sum contributions from each curve segment into the RHS (b) vectors.
     // Each segment's influence is weighted by its relative curve length and 
     // the (1 - smoothnessWeight) data-term factor.
     for(size_t k = 0; k < curveIndices.size() ; ++k) {  // for each curve
