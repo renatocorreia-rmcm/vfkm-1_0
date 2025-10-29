@@ -76,35 +76,53 @@ void Optimizer::multiplyByA(const Vector& x, Vector &resultX, ProblemSettings &p
     then sum them up to get A*x
     */
 
-    Grid &grid = prob.grid;
-    const vector<int> &curveIndices = prob.curveIndices;
-    const vector<CurveDescription> &curve_descriptions = prob.curve_descriptions;
-    VECTOR_TYPE totalCurveLength = prob.totalCurveLength;
+
     VECTOR_TYPE smoothnessWeight = prob.smoothnessWeight;
-
-
+    
     resultX.setValues(0.0);
+
+
+    // FIT PENALTY
+
+    
+    const vector<int>&              curveIndices = prob.curveIndices;
+    const vector<CurveDescription>& curve_descriptions = prob.curve_descriptions;
+    VECTOR_TYPE                     totalCurveLength = prob.totalCurveLength;
+    
+    float k_fit = (1.0f - smoothnessWeight) / totalCurveLength;  // normalization factor for FIT error
     
     for (size_t k=0; k<curveIndices.size(); ++k) {  // for each curve in cluster
         
         int i = curveIndices[k];  // get its index
         const CurveDescription &curve = curve_descriptions[i];  // load it
         
-        float k_global = (1.0f - smoothnessWeight) / totalCurveLength;  // normalization factor
-        curve.add_cTcx(resultX, x, k_global);  // add contribution of this curve to result
+        // add FIT contribution of this curve to result
+        curve.add_cTcx(resultX, x, k_fit); 
     }
     
+    
+    
+    // SMOOTH PENALTY
+    
+
+    Grid&grid = prob.grid;
     Vector Ax(x);
     
-    // L . x
+    // DISCRETIZED LAPLACIAN
     grid.multiplyByLaplacian2(Ax); // gets overwritten the second time, but whatever.
-    // L^T . L . x
+    // AX agora contém L . x
     grid.multiplyByLaplacian2(Ax);  
+    // Ax agora contém L^T . L . x  (laplaciano discretizado é uma matriz simétrica L^T = L)
     
+    // NORMALIZATION
     int numberOfVertices = grid.getResolutionX() * grid.getResolutionY();
-    Ax.scale(smoothnessWeight/numberOfVertices);
+    float k_smooth = smoothnessWeight/numberOfVertices;  // normalization factor for SMOOTH error
+
+    Ax.scale(k_smooth);
     
-    resultX.add(Ax);
+    // add SMOOTH contribution of this curve to result
+    resultX.add(Ax);  
+
 }
 
 
