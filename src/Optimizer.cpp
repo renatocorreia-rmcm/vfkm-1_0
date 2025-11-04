@@ -606,3 +606,6 @@ void Optimizer::optimizeImplicitFastWithWeights(
 // vector fields given assignments and reassigning curves to their best
 // vector fields until convergence (no changes) or a max iteration cap.
 
+
+
+
