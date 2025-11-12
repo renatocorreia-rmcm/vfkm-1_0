@@ -275,7 +275,7 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent) {
     VECTOR_TYPE newFirstComponent[numberOfVectors];
 
     float horizontalCotangentWeight = m_delta_x / m_delta_y;
-    float verticalCotangentWeight = / m_delta_x;
+    float verticalCotangentWeight = m_delta_y / m_delta_x;
 
     //numberOfVectors == numberOfVertices in the grid == resolution * resolution
     for(int i = 0 ; i < numberOfVectors ; ++i){
@@ -361,7 +361,7 @@ void Grid::multiplyByLaplacian2(Vector &firstComponent) {
                 coef += horizontalCotangentWeight;
             }
             if(canMoveRight){
-                coef + = horizontalCotangentWeight;
+                coef += horizontalCotangentWeight;
             }
 
             coef /= 2.0;
