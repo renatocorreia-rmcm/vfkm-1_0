@@ -565,8 +565,27 @@ void Optimizer::optimizeImplicitFastWithWeights(
     pair<vector<int>, vector<vector<int> > > f = compute_first_assignment(
         grid, numberOfVectorFields, curve_descriptions, totalCurveLength, smoothnessWeight
     );
+
+    // DEBUG FIRST ASSIGNMENT
+
+
+
     //
     vector<vector<int> > mapVectorFieldCurves = f.second;
+
+        for (int j = 0; j < mapVectorFieldCurves.at(0).size(); j++)
+        {
+            if (mapVectorFieldCurves.at(0).at(j) <= 766){
+
+                cout << mapVectorFieldCurves.at(0).at(j) << '\n';
+            }
+        }
+    
+    int x;
+    cout << "Press any key to continue..." << endl;
+    cin >> x;
+    
+
     copy(f.first.begin(), f.first.end(), mapCurveToVectorField);
 
     //optimize
