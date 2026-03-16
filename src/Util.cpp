@@ -75,7 +75,6 @@ void Util::loadCurves(
 
     // int stride = 0;
     ifstream file (filename.c_str());
-    ofstream real_indices("/tmp/real_indices.txt");
     int real_index = 0;
     
     if (file.is_open())
@@ -97,7 +96,7 @@ void Util::loadCurves(
             {  
                 if(curveContents.size() >=2)  // if curve has minimum size
                 {  
-                    real_indices << real_index << endl;
+
                     curves.push_back(PolygonalPath(curveContents));  // append new polygonal path to curves array
                 }
                 real_index++;
@@ -110,7 +109,6 @@ void Util::loadCurves(
             ) 
             {  
                 if(curveContents.size() >=2){
-                    real_indices << real_index << endl;
                     curves.push_back(PolygonalPath(curveContents));
                 }
                 // WHY NOT real_index++ IN THIS CASE ??
