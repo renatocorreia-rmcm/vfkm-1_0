@@ -566,24 +566,19 @@ void Optimizer::optimizeImplicitFastWithWeights(
         grid, numberOfVectorFields, curve_descriptions, totalCurveLength, smoothnessWeight
     );
 
-    // DEBUG FIRST ASSIGNMENT
-
-
-
-    //
     vector<vector<int> > mapVectorFieldCurves = f.second;
-
-        for (int j = 0; j < mapVectorFieldCurves.at(0).size(); j++)
-        {
-            if (mapVectorFieldCurves.at(0).at(j) <= 766){
-
-                cout << mapVectorFieldCurves.at(0).at(j) << '\n';
-            }
-        }
+    
+    // DEBUG FIRST ASSIGNMENT
+    /*
+    for (int j = 0; j < mapVectorFieldCurves.at(0).size(); j++)
+    {
+        cout << mapVectorFieldCurves.at(0).at(j) << '\n';
+    }
     
     int x;
-    cout << "Press any key to continue..." << endl;
+    cout << "WAITING ANY INPUT TO CONTINUE\n" << endl;
     cin >> x;
+    */
     
 
     copy(f.first.begin(), f.first.end(), mapCurveToVectorField);
@@ -600,6 +595,29 @@ void Optimizer::optimizeImplicitFastWithWeights(
 
         totalError = get_total_error(curve_descriptions, vectorFields, mapCurveToVectorField, totalCurveLength, smoothnessWeight, grid);
         cout << "After optimization: " << totalError << endl;
+
+
+        // DEBUG FIRST VECTOR FIELD
+
+        cout << "VECTOR FIELDS: " << endl;
+        for (int i = 0; i < numberOfVectorFields; i++)        {
+            cout << "\nVF " << i << ":\n";
+
+            cout << "\n\t X \n";
+            for (int j = 0; j < grid.getResolutionX()*grid.getResolutionY(); j++){
+                cout << vectorFields[i].first[j] << '\n';
+            }
+
+            cout << "\n\t Y \n";
+            for (int j = 0; j < grid.getResolutionX()*grid.getResolutionY(); j++){
+                cout << vectorFields[i].second[j] << '\n';
+            }
+        }
+
+        int x;
+        cout << "WAITING ANY INPUT TO CONTINUE\n" << endl;
+        cin >> x;
+
 
         optimize_assignments(total_change, totalError, mapCurveToVectorField, mapVectorFieldCurves, mapCurveToError, vectorFields, curve_descriptions, totalCurveLength, smoothnessWeight, grid);
         totalError = get_total_error(curve_descriptions, vectorFields, mapCurveToVectorField, totalCurveLength, smoothnessWeight, grid);

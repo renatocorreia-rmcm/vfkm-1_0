@@ -123,7 +123,19 @@ void saveExperiment(string directory, string currentFileLoaded, Cluster* root){
 
 }
 
-int main(int argc, char *argv[]){
+
+
+
+
+
+/* DEBUG ARGUMENTS
+
+./vfkm ../data/synthetic.txt 3 2 0.05 ../output 
+
+*/
+
+
+int main(int argc, char *argv[]){  
     /*
     arguments count
     arguments values
