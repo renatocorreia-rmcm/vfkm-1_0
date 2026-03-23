@@ -207,12 +207,6 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
     float smoothnessWeight
 )
 {
-
-
-    // DEBUG ARGUMENTS
-    cout << totalCurveLength << '\n';
-    cout << smoothnessWeight << '\n';
-
     
     // optimizeVectorFieldWithWeights: given an initial guess for the vector
     // field components, construct the RHS from curve constraints (b), and then solve
@@ -225,21 +219,42 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
     // corresponding to the X and Y components of the vector field.
     int numberOfVertices = grid.getResolutionX() * grid.getResolutionY();
 
-    Vector indepx(numberOfVertices), indepy(numberOfVertices);
+    Vector indepx(numberOfVertices), indepy(numberOfVertices);  // todo: define representation
     indepx.setValues(0.0f);
     indepy.setValues(0.0f);
 
     // Sum contributions from each curve segment into the RHS (b) vectors.
     // Each segment's influence is weighted by its relative curve length and 
     // the (1 - smoothnessWeight) data-term factor.
-    for(size_t k = 0; k < curveIndices.size() ; ++k) {  // for each curve
-        int i = curveIndices[k];
+    for(size_t c = 0; c < curveIndices.size() ; ++c) {  // for each curve
+        int i = curveIndices[c];
         const CurveDescription &curve = curve_descriptions[i];
 
         for (size_t j=0; j<curve.segments.size(); ++j) {  // for each segment in curve
             float k = (1.0 - smoothnessWeight) * (curve.segments[j].time[1] - curve.segments[j].time[0])/totalCurveLength;  // weighting factor
+            
+            cout << "k       " << k << '\n';
+            
             curve.segments[j].add_cTx(indepx, curve.rhsx, k);
             curve.segments[j].add_cTx(indepy, curve.rhsy, k);
+
+            /* DEBUG RHS's             
+            */
+            
+            
+            cout << "curve   " << i << '\n';
+            cout << "segment " << curve.segments[j].index << '\n';
+
+            cout << "\nINDEP X\n";
+            cout << indepx;
+            cout << "\nINDEP Y\n";
+            cout << indepy;
+
+            // todo: solve: in python indep[2] is always 0
+
+            cout << "\n\nINPUT ANYTHING TO CONTINUE\n\n";
+            string x; cin >> x;
+
         }
     }
 
@@ -283,6 +298,8 @@ pair< vector<int>, vector< vector<int> > > compute_first_assignment
         Vector &yComponent(vs.second);
         xComponent.setValues(0.0);
         yComponent.setValues(0.0);
+
+        cout << "\nCOMPUTING FIRST ASSIGNMENT\n\n";
 
         optimizeVectorFieldWithWeights(grid, xComponent, yComponent,
                                        curveIndices, curves, totalCurveLength, smoothnessWeight);
@@ -402,12 +419,17 @@ void optimize_all_vector_fields(  // OPTMIZE STEP
 
 
     for(size_t j = 0 ; j < vectorFields.size() ; ++j) {  // for each vector field
+
+        cout << "\n VECTOR FIELD " << j <<"\n";
+
         pair<Vector, Vector> &currentVectorField = vectorFields.at(j);
         const vector<int>& curveIndices = mapVectorFieldCurves.at(j);
         Vector &xComponent = currentVectorField.first;
         Vector &yComponent = currentVectorField.second;
         // Solve the best vector field (X and Y components) given the
         // set of curves assigned to this vector field.
+
+        cout << "\n STARTING VF OPTIMIZATION \n";
         optimizeVectorFieldWithWeights(
             grid, xComponent, yComponent, curveIndices, curves, totalCurveLength, smoothnessWeight
         );

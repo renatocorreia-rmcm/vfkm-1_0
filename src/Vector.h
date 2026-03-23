@@ -2,15 +2,19 @@
 
 #include <string>
 #include <cmath>
+#include <iostream>
 
 #define VECTOR_TYPE float
 
 class Vector
 {
-private:
+private:    
     int dimension;
     VECTOR_TYPE *values;
 public:
+    friend std::ostream& operator<<(std::ostream& os, const Vector& obj);
+
+
     Vector() { dimension=0; values = NULL; }
     explicit Vector(int dimension);
     Vector(const Vector& v);
