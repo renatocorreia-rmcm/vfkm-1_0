@@ -207,6 +207,12 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
     float smoothnessWeight
 )
 {
+
+
+    // DEBUG ARGUMENTS
+    cout << totalCurveLength << '\n';
+    cout << smoothnessWeight << '\n';
+
     
     // optimizeVectorFieldWithWeights: given an initial guess for the vector
     // field components, construct the RHS from curve constraints (b), and then solve
@@ -380,12 +386,27 @@ void optimize_all_vector_fields(  // OPTMIZE STEP
     // This is the M-step like step in an EM/clustering view: given
     // assignments (mapVectorFieldCurves) optimize the parameters (vector
     // field components) that minimize the per-cluster error.
+
+
+    /*
+    // DEBUG ARGUMENTS
+    cout << totalCurveLength << '\n';
+    cout << smoothnessWeight << '\n';
+    
+    cout << "input anything to continue\n";
+    int a; cin >> a;
+    */
+    
+
+
+
+
     for(size_t j = 0 ; j < vectorFields.size() ; ++j) {  // for each vector field
         pair<Vector, Vector> &currentVectorField = vectorFields.at(j);
         const vector<int>& curveIndices = mapVectorFieldCurves.at(j);
         Vector &xComponent = currentVectorField.first;
         Vector &yComponent = currentVectorField.second;
-        // Solve for the best vector field (X and Y components) given the
+        // Solve the best vector field (X and Y components) given the
         // set of curves assigned to this vector field.
         optimizeVectorFieldWithWeights(
             grid, xComponent, yComponent, curveIndices, curves, totalCurveLength, smoothnessWeight
@@ -598,7 +619,7 @@ void Optimizer::optimizeImplicitFastWithWeights(
 
 
         // DEBUG FIRST VECTOR FIELD
-
+        /*
         cout << "VECTOR FIELDS: " << endl;
         for (int i = 0; i < numberOfVectorFields; i++)        {
             cout << "\nVF " << i << ":\n";
@@ -607,17 +628,18 @@ void Optimizer::optimizeImplicitFastWithWeights(
             for (int j = 0; j < grid.getResolutionX()*grid.getResolutionY(); j++){
                 cout << vectorFields[i].first[j] << '\n';
             }
-
+            
             cout << "\n\t Y \n";
             for (int j = 0; j < grid.getResolutionX()*grid.getResolutionY(); j++){
                 cout << vectorFields[i].second[j] << '\n';
             }
         }
-
+        
         int x;
         cout << "WAITING ANY INPUT TO CONTINUE\n" << endl;
         cin >> x;
-
+        */
+        
 
         optimize_assignments(total_change, totalError, mapCurveToVectorField, mapVectorFieldCurves, mapCurveToError, vectorFields, curve_descriptions, totalCurveLength, smoothnessWeight, grid);
         totalError = get_total_error(curve_descriptions, vectorFields, mapCurveToVectorField, totalCurveLength, smoothnessWeight, grid);
