@@ -233,28 +233,43 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
         for (size_t j=0; j<curve.segments.size(); ++j) {  // for each segment in curve
             float k = (1.0 - smoothnessWeight) * (curve.segments[j].time[1] - curve.segments[j].time[0])/totalCurveLength;  // weighting factor
             
-            cout << "k       " << k << '\n';
+
+            /* DEBUG K_FACTOR
+            
+            cout << "\nK_FACTOR\n";
+            
+            cout << "smoothness_weight  " << smoothnessWeight << '\n';
+            cout << "time_1             " << curve.segments[j].time[1] << '\n';
+            cout << "time_0             " << curve.segments[j].time[0] << '\n';
+            cout << "total_curve_length " << totalCurveLength << '\n';
+            
+            */
+            //cout << "k                  " << k << '\n';
+            /*
+            cout << "\nINPUT ANYTHING TO CONTINUE\n";
+            string a; cin >> a;
+            */
             
             curve.segments[j].add_cTx(indepx, curve.rhsx, k);
             curve.segments[j].add_cTx(indepy, curve.rhsy, k);
 
             /* DEBUG RHS's             
-            */
             
             
             cout << "curve   " << i << '\n';
             cout << "segment " << curve.segments[j].index << '\n';
-
+            
             cout << "\nINDEP X\n";
             cout << indepx;
             cout << "\nINDEP Y\n";
             cout << indepy;
 
             // todo: solve: in python indep[2] is always 0
-
+            
             cout << "\n\nINPUT ANYTHING TO CONTINUE\n\n";
             string x; cin >> x;
-
+            */
+            
         }
     }
 
