@@ -6,6 +6,7 @@
 #include "Vector2D.h"
 #include "PolygonalPath.h"
 #include "Vector.h"
+#include <iostream>
 
 struct TriangularFace{
     int indexV1;
@@ -43,7 +44,32 @@ struct Segment {
     inline void add_cTx(Vector &resulting_field, const Vector &v, float w=1.0f) const {
         // LT.L = [[1/3, 1/6], [1/6, 1/3]]
         // B LT.L = 
+
+
         float v1 = v[index], v2 = v[index+1];
+
+
+        std::cout << "this is resulting field\n";
+        std::string a; std::cin >> a;
+        std::cout << resulting_field;
+
+        std::cout << "this is v1\n";
+        std::string b; std::cin >> b;
+        std::cout << v1 << '\n';
+
+        std::cout << "this is v2\n";
+        std::string c; std::cin >> c;
+        std::cout << v2 << '\n';
+
+        std::cout << "this is endpoint0 barcords";  // ERROR IS HERE
+        std::string d; std::cin >> d;
+        std::cout << endpoint[0].barycentric_coords[0] << ' ' << endpoint[0].barycentric_coords[1] << ' ' << endpoint[0].barycentric_coords[2] << '\n';
+
+        std::cout << "this is endpoint1 barcords";
+        std::string e; std::cin >> e;
+        std::cout << endpoint[1].barycentric_coords[0] << ' ' << endpoint[1].barycentric_coords[1] << ' ' << endpoint[1].barycentric_coords[2] << '\n';
+
+
         resulting_field[endpoint[0].face.indexV1] += w * v1 * endpoint[0].barycentric_coords[0] / 3.0;
         resulting_field[endpoint[0].face.indexV2] += w * v1 * endpoint[0].barycentric_coords[1] / 3.0;
         resulting_field[endpoint[0].face.indexV3] += w * v1 * endpoint[0].barycentric_coords[2] / 3.0;
@@ -57,6 +83,7 @@ struct Segment {
         resulting_field[endpoint[1].face.indexV1] += w * v2 * endpoint[1].barycentric_coords[0] / 3.0;
         resulting_field[endpoint[1].face.indexV2] += w * v2 * endpoint[1].barycentric_coords[1] / 3.0;
         resulting_field[endpoint[1].face.indexV3] += w * v2 * endpoint[1].barycentric_coords[2] / 3.0;
+    
     }
 
 

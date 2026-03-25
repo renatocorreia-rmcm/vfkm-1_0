@@ -250,10 +250,11 @@ void optimizeVectorFieldWithWeights(  // optimize a single vector field (using s
             string a; cin >> a;
             */
             
+            
             curve.segments[j].add_cTx(indepx, curve.rhsx, k);
             curve.segments[j].add_cTx(indepy, curve.rhsy, k);
 
-            /* DEBUG RHS's             
+            /*DEBUG RHS's             
             
             
             cout << "curve   " << i << '\n';
